@@ -1,0 +1,17 @@
+/.gradle
+
+.DS_Store
+.DS_Store?
+.Spotlight-V100
+.Trashes
+Thumbs.db
+
+*.class
+build/
+*.iml
+target/ß
+
+.project
+.classpath
+.settings
+.idea
