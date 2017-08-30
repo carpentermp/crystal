@@ -8,6 +8,7 @@ import java.util.Set;
 
 import static org.junit.Assert.*;
 
+@SuppressWarnings({"ObjectEqualsNull", "EqualsBetweenInconvertibleTypes"})
 public class TestMolecule {
 
   private Molecule molecule;
@@ -72,6 +73,17 @@ public class TestMolecule {
     for (int expectedId : expectedIds) {
       assertTrue(usedIds.contains(expectedId));
     }
+  }
+
+  @Test
+  public void testEquals() {
+    Molecule m1 = new Molecule(Direction.Left, Direction.DownLeft);
+    Molecule m2 = new Molecule(Direction.Left, Direction.DownLeft);
+    Molecule m3 = new Molecule(Direction.Left, Direction.DownRight);
+    assertEquals(m1, m2);
+    assertNotEquals(m1, m3);
+    assertFalse(m1.equals(null));
+    assertFalse(m1.equals(crystal));
   }
 
 }

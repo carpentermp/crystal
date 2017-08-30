@@ -13,7 +13,7 @@ public class TestCrystalSolver {
 
   @Before
   public void setUp() {
-    solver = new CrystalSolver();
+    solver = new CrystalSolver(Molecule.m05);
   }
 
   @Test

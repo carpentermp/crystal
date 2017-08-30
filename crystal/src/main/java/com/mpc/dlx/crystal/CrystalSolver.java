@@ -12,48 +12,62 @@ public class CrystalSolver {
 
   public static final int COLUMN_COUNT = 60;
 
-  private final Molecule l1 = new Molecule(Direction.DownRight, Direction.Right, Direction.Right, Direction.UpLeft, Direction.DownLeft);
-  private final Molecule l2 = l1.rotate();
-  private final Molecule l3 = l2.rotate();
-  private final Molecule l4 = l3.rotate();
-  private final Molecule l5 = l4.rotate();
-  private final Molecule l6 = l5.rotate();
-
-  private final Molecule r1 = l1.mirror(Direction.Left);
-  private final Molecule r2 = r1.rotate();
-  private final Molecule r3 = r2.rotate();
-  private final Molecule r4 = r3.rotate();
-  private final Molecule r5 = r4.rotate();
-  private final Molecule r6 = r5.rotate();
+//  private final Molecule l1 = new Molecule(Direction.DownRight, Direction.Right, Direction.Right, Direction.UpLeft, Direction.DownLeft);
+//  private final Molecule l2 = l1.rotate();
+//  private final Molecule l3 = l2.rotate();
+//  private final Molecule l4 = l3.rotate();
+//  private final Molecule l5 = l4.rotate();
+//  private final Molecule l6 = l5.rotate();
+//
+//  private final Molecule r1 = l1.mirror(Direction.Left);
+//  private final Molecule r2 = r1.rotate();
+//  private final Molecule r3 = r2.rotate();
+//  private final Molecule r4 = r3.rotate();
+//  private final Molecule r5 = r4.rotate();
+//  private final Molecule r6 = r5.rotate();
 
   private final Crystal crystal = new Crystal();
   final String[] columnNames = new String[COLUMN_COUNT];
+  final List<Molecule> molecules;
   final List<Row> rows;
   final byte[][] matrix;
 
-  public CrystalSolver() {
+  public CrystalSolver(Molecule molecule) {
     for (int i = 0; i < columnNames.length; i++) {
       columnNames[i] = "c" + (i + 1);
     }
-    rows = buildRows();
+    molecules = buildMolecules(molecule);
+    rows = buildRows(molecules);
     matrix = buildMatrix(rows);
   }
 
-  private List<Row> buildRows() {
+  private List<Molecule> buildMolecules(Molecule molecule) {
+    List<Molecule> molecules = new ArrayList<>();
+    molecules.add(molecule);
+    Molecule l = molecule;
+    Molecule r = null;
+    if (molecule.getOrientation() != Orientation.Symmetric && molecule.getOrientation() != Orientation.AChiral) {
+      r = molecule.mirror(Direction.Right);
+      molecules.add(r);
+    }
+    int rotations = molecule.getOrientation() == Orientation.Symmetric ? 2 : 5;
+    for (int i = 0; i < rotations; i++) {
+      l = l.rotate();
+      molecules.add(l);
+      if (r != null) {
+        r = r.rotate();
+        molecules.add(r);
+      }
+    }
+    return molecules;
+  }
+
+  private List<Row> buildRows(List<Molecule> molecules) {
     List<Row> rows = new ArrayList<>();
     for (int i = 1; i <= 60; i++) {
-      safeAddRow(rows, buildRow(i, l1));
-      safeAddRow(rows, buildRow(i, l2));
-      safeAddRow(rows, buildRow(i, l3));
-      safeAddRow(rows, buildRow(i, l4));
-      safeAddRow(rows, buildRow(i, l5));
-      safeAddRow(rows, buildRow(i, l6));
-      safeAddRow(rows, buildRow(i, r1));
-      safeAddRow(rows, buildRow(i, r2));
-      safeAddRow(rows, buildRow(i, r3));
-      safeAddRow(rows, buildRow(i, r4));
-      safeAddRow(rows, buildRow(i, r5));
-      safeAddRow(rows, buildRow(i, r6));
+      for (Molecule m : molecules) {
+        safeAddRow(rows, buildRow(i, m));
+      }
     }
     return rows;
   }
@@ -92,7 +106,7 @@ public class CrystalSolver {
   }
 
   public static void main(String[] args) {
-    new CrystalSolver().solve();
+    new CrystalSolver(Molecule.m05).solve();
   }
 
 }
