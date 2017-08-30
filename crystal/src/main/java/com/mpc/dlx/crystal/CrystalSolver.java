@@ -6,67 +6,55 @@ import au.id.bjf.dlx.data.ColumnObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "squid:S106", "squid:HiddenFieldCheck"})
 public class CrystalSolver {
 
-  public static final int COLUMN_COUNT = 60;
-
-//  private final Molecule l1 = new Molecule(Direction.DownRight, Direction.Right, Direction.Right, Direction.UpLeft, Direction.DownLeft);
-//  private final Molecule l2 = l1.rotate();
-//  private final Molecule l3 = l2.rotate();
-//  private final Molecule l4 = l3.rotate();
-//  private final Molecule l5 = l4.rotate();
-//  private final Molecule l6 = l5.rotate();
-//
-//  private final Molecule r1 = l1.mirror(Direction.Left);
-//  private final Molecule r2 = r1.rotate();
-//  private final Molecule r3 = r2.rotate();
-//  private final Molecule r4 = r3.rotate();
-//  private final Molecule r5 = r4.rotate();
-//  private final Molecule r6 = r5.rotate();
-
-  private final Crystal crystal = new Crystal();
-  final String[] columnNames = new String[COLUMN_COUNT];
+  private final Crystal crystal;
+  final String[] columnNames;
   final List<Molecule> molecules;
   final List<Row> rows;
   final byte[][] matrix;
 
-  public CrystalSolver(Molecule molecule) {
-    for (int i = 0; i < columnNames.length; i++) {
-      columnNames[i] = "c" + (i + 1);
-    }
+  public CrystalSolver(Molecule molecule, Crystal crystal) {
+    this.crystal = crystal;
+    columnNames = crystal.getNodeIds()
+      .stream()
+      .map(Object::toString)
+      .collect(Collectors.toList())
+      .toArray(new String[crystal.size()]);
     molecules = buildMolecules(molecule);
     rows = buildRows(molecules);
     matrix = buildMatrix(rows);
   }
 
   private List<Molecule> buildMolecules(Molecule molecule) {
-    List<Molecule> molecules = new ArrayList<>();
-    molecules.add(molecule);
+    List<Molecule> moleculeVariants = new ArrayList<>();
+    moleculeVariants.add(molecule);
     Molecule l = molecule;
     Molecule r = null;
     if (molecule.getOrientation() != Orientation.Symmetric && molecule.getOrientation() != Orientation.AChiral) {
       r = molecule.mirror(Direction.Right);
-      molecules.add(r);
+      moleculeVariants.add(r);
     }
     int rotations = molecule.getOrientation() == Orientation.Symmetric ? 2 : 5;
     for (int i = 0; i < rotations; i++) {
       l = l.rotate();
-      molecules.add(l);
+      moleculeVariants.add(l);
       if (r != null) {
         r = r.rotate();
-        molecules.add(r);
+        moleculeVariants.add(r);
       }
     }
-    return molecules;
+    return moleculeVariants;
   }
 
   private List<Row> buildRows(List<Molecule> molecules) {
     List<Row> rows = new ArrayList<>();
-    for (int i = 1; i <= 60; i++) {
+    for (String columnName : columnNames) {
       for (Molecule m : molecules) {
-        safeAddRow(rows, buildRow(i, m));
+        safeAddRow(rows, buildRow(Integer.parseInt(columnName), m));
       }
     }
     return rows;
@@ -75,7 +63,7 @@ public class CrystalSolver {
   private byte[][] buildMatrix(List<Row> rows) {
     byte[][] matrix = new byte[rows.size()][];
     for (int i = 0; i < matrix.length; i++) {
-      matrix[i] = rows.get(i).getBytes();
+      matrix[i] = rows.get(i).getBytes(columnNames);
     }
     return matrix;
   }
@@ -90,6 +78,9 @@ public class CrystalSolver {
     Set<Integer> usedIds = molecule.getUsedNodeIds(crystal.getNode(nodeId));
     if (usedIds == null) {
       return null;
+    }
+    if (usedIds.size() != 5) {
+      throw new IllegalArgumentException("Bogus used ids set!");
     }
     return new Row(nodeId, molecule, usedIds);
   }
@@ -106,7 +97,7 @@ public class CrystalSolver {
   }
 
   public static void main(String[] args) {
-    new CrystalSolver(Molecule.m05).solve();
+    new CrystalSolver(Molecule.m05, new Crystal("/Users/carpentermp/Downloads/neighbors.txt")).solve();
   }
 
 }

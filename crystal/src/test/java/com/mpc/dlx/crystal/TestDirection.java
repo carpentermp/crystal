@@ -58,4 +58,21 @@ public class TestDirection {
 
   }
 
+  @Test
+  public void testFromValue() {
+    assertEquals(Direction.Right, Direction.fromValue(1));
+    assertEquals(Direction.DownRight, Direction.fromValue(2));
+    assertEquals(Direction.DownLeft, Direction.fromValue(3));
+    assertEquals(Direction.Left, Direction.fromValue(4));
+    assertEquals(Direction.UpLeft, Direction.fromValue(5));
+    assertEquals(Direction.UpRight, Direction.fromValue(6));
+    try {
+      Direction.fromValue(0);
+      fail("should have failed with direction: 0");
+    }
+    catch (IllegalArgumentException e) {
+      // expected
+    }
+  }
+
 }

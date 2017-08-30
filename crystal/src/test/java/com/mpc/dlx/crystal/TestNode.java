@@ -9,7 +9,7 @@ public class TestNode {
   @Test
   public void testSetGet() {
     Node node = new Node(0);
-    assertEquals(0, node.value());
+    assertEquals(0, node.getId());
     Node one = new Node(1);
     Node two = new Node(2);
     Node three = new Node(3);

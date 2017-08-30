@@ -19,6 +19,14 @@ public class CrystalResultProcessor implements DLXResultProcessor {
     this.rows = rows;
   }
 
+  public boolean processResult(DLXResult result) {
+    count++;
+    List<Row> resultRows = convertResultToRows(result);
+    int leftCount = countLeftOrientedMolecules(resultRows);
+    leftCounts[leftCount]++;
+    return true; // keep going
+  }
+
   private List<Row> convertResultToRows(DLXResult result) {
     List<Row> resultRows = new ArrayList<>();
     Iterator<List<Object>> it = result.rows();
@@ -26,7 +34,7 @@ public class CrystalResultProcessor implements DLXResultProcessor {
       List<Integer> usedIds = it.next()
           .stream()
           .map(String::valueOf)
-          .map(s -> Integer.parseInt(s.substring(1)))
+          .map(Integer::parseInt)
           .collect(Collectors.toList());
       resultRows.add(findRow(usedIds));
     }
@@ -38,14 +46,6 @@ public class CrystalResultProcessor implements DLXResultProcessor {
         .filter(r -> r.isThisRow(usedIds))
         .findAny()
         .orElse(null);
-  }
-
-  public boolean processResult(DLXResult result) {
-    count++;
-    List<Row> resultRows = convertResultToRows(result);
-    int leftCount = countLeftOrientedMolecules(resultRows);
-    leftCounts[leftCount]++;
-    return true; // keep going
   }
 
   private int countLeftOrientedMolecules(List<Row> resultRows) {

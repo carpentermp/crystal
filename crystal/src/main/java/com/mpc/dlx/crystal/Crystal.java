@@ -1,100 +1,155 @@
 package com.mpc.dlx.crystal;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.*;
 
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "squid:S1226", "squid:S1135", "squid:S106", "SameParameterValue"})
 public class Crystal {
 
-  private static final int[] downRight = new int[]{
-      1, 3, 7, 12, 19, 26, 34, 41, 48, 53, 57, 59, 16, 23, 30, 6, 11, 18, 25, 33,
-      40, 47, 52, 56, 10, 15, 22, 29, 37, 44, 17, 24, 32, 39, 46, 51, 5, 9, 14, 21,
-      28, 36, 43, 50, 55, 31, 38, 45, 2, 4, 8, 13, 20, 27, 35, 42, 49, 54, 58, 60
-  };
+  private final Map<Integer, Node> nodes = new HashMap<>();
+  // todo stuff for "holes" -- use "remainder". When > 0 then first hole goes at origin. Other holes float as one node molecules
 
-  private static final int[] downLeft = new int[]{
-      23, 29, 36, 42, 48, 52, 5, 8, 12, 18, 24, 31, 60, 16, 22, 28, 35, 41, 47, 51,
-      4, 7, 11, 17, 55, 58, 59, 15, 21, 27, 34, 40, 46, 2, 3, 6, 44, 50, 54, 57,
-      10, 14, 20, 26, 33, 39, 45, 1, 30, 37, 43, 49, 53, 56, 9, 13, 19, 25, 32, 38
-  };
-
-  private static final int[] left = new int[]{
-      16, 15, 14, 13, 12, 11, 44, 43, 42, 41, 40, 39, 38, 60, 59, 10, 9, 8, 7, 6,
-      37, 36, 35, 34, 33, 32, 31, 58, 57, 56, 5, 4, 3, 30, 29, 28, 27, 26, 25, 24,
-      55, 54, 53, 52, 51, 2, 1, 23, 22, 21, 20, 19, 18, 17, 50, 49, 48, 47, 46, 45
-  };
-
-  static Map<Integer, Direction> terminals = new HashMap<>();
-
-  static {
-    terminals.put(16, Direction.Right);
-    terminals.put(60, Direction.DownRight);
-    terminals.put(38, Direction.DownLeft);
-    terminals.put(45, Direction.Left);
-    terminals.put(1, Direction.UpLeft);
-    terminals.put(23, Direction.UpRight);
+  public Crystal(String neighborsFile) {
+    try {
+      Map<Integer, List<String>> connections = readInConnections(neighborsFile);
+      for (Integer nodeId : connections.keySet()) {
+        nodes.put(nodeId, new Node(nodeId));
+      }
+      for (Map.Entry<Integer, List<String>> entry  : connections.entrySet()) {
+        Node node = nodes.get(entry.getKey());
+        List<String> nodeConnections = entry.getValue();
+        for (String line : nodeConnections) {
+          String[] parts = line.split(" ");
+          Direction direction = Direction.fromValue(Integer.parseInt(parts[1]));
+          Integer connectingNode = Integer.parseInt(parts[2]);
+          node.set(nodes.get(connectingNode), direction);
+        }
+      }
+      // todo kludge. for now, just remove the 0th node
+      removeNode(0);
+      checkLinksBackAndForth();
+      checkNoDuplicateNodes();
+    }
+    catch (IOException e) {
+      throw new IllegalArgumentException(e);
+    }
   }
 
-  private final Map<Integer, Node> nodes = new HashMap<>();
+  private void removeNode(int nodeId) {
+    Node nodeZero = nodes.get(nodeId);
+    Node rightNode = nodeZero.get(Direction.Right);
+    Node downRightNode = nodeZero.get(Direction.DownRight);
+    Node downLeftNode = nodeZero.get(Direction.DownLeft);
+    Node leftNode = nodeZero.get(Direction.Left);
+    Node upLeftNode = nodeZero.get(Direction.UpLeft);
+    Node upRightNode = nodeZero.get(Direction.UpRight);
+    rightNode.set(null, Direction.Left);
+    downRightNode.set(null, Direction.UpLeft);
+    downLeftNode.set(null, Direction.UpRight);
+    leftNode.set(null, Direction.Right);
+    upLeftNode.set(null, Direction.DownRight);
+    upRightNode.set(null, Direction.DownLeft);
+    nodes.remove(nodeId);
+    checkDirection(rightNode, Direction.Right);
+    checkDirection(downRightNode, Direction.DownRight);
+    checkDirection(downLeftNode, Direction.DownLeft);
+    checkDirection(leftNode, Direction.Left);
+    checkDirection(upLeftNode, Direction.UpLeft);
+    checkDirection(upRightNode, Direction.UpRight);
+  }
 
-  public Crystal() {
-    for (int i = 1; i <= 60; i++) {
-      nodes.put(i, new Node(i));
+  private void checkDirection(Node node, Direction direction) {
+    Set<Integer> nodeIds = new HashSet<>(nodes.keySet());
+    while (node != null) {
+      nodeIds.remove(node.getId());
+      node = node.get(direction);
     }
-    checkArray(downRight, 60);
-    checkArray(downLeft, 60);
-    checkArray(left, 60);
-    setUpLinks(downRight, Direction.DownRight);
-    setUpLinks(downLeft, Direction.DownLeft);
-    setUpLinks(left, Direction.Left);
-    checkLinks();
+    if (!nodeIds.isEmpty()) {
+      throw new IllegalArgumentException("Bad crystal!");
+    }
+  }
+
+  private void checkNoDuplicateNodes() {
+    for (Node node : nodes.values()) {
+      int countWeShouldHave = 6;
+      Set<Node> nodesAllAround = new HashSet<>();
+      countWeShouldHave -= safeAddNode(nodesAllAround, node.get(Direction.Right)) ? 0 : 1;
+      countWeShouldHave -= safeAddNode(nodesAllAround, node.get(Direction.DownRight)) ? 0 : 1;
+      countWeShouldHave -= safeAddNode(nodesAllAround, node.get(Direction.DownLeft)) ? 0 : 1;
+      countWeShouldHave -= safeAddNode(nodesAllAround, node.get(Direction.Left)) ? 0 : 1;
+      countWeShouldHave -= safeAddNode(nodesAllAround, node.get(Direction.UpLeft)) ? 0 : 1;
+      countWeShouldHave -= safeAddNode(nodesAllAround, node.get(Direction.UpRight)) ? 0 : 1;
+      if (nodesAllAround.size() != countWeShouldHave) {
+        throw new IllegalArgumentException("Found duplicate node neighbor!");
+      }
+      if (countWeShouldHave < 5) {
+        throw new IllegalArgumentException("Too many nulls on a node");
+      }
+    }
+  }
+
+  private boolean safeAddNode(Set<Node> nodes, Node node) {
+    if (node != null) {
+      nodes.add(node);
+      return true;
+    }
+    return false;
+  }
+
+  private void checkLinksBackAndForth() {
+    for (Node node : nodes.values()) {
+      checkLinksBackAndForth(node, Direction.Right);
+      checkLinksBackAndForth(node, Direction.DownRight);
+      checkLinksBackAndForth(node, Direction.DownLeft);
+      checkLinksBackAndForth(node, Direction.Left);
+      checkLinksBackAndForth(node, Direction.UpLeft);
+      checkLinksBackAndForth(node, Direction.UpRight);
+    }
+  }
+
+  private void checkLinksBackAndForth(Node node, Direction direction) {
+    Node next = node.get(direction);
+    if (next == null) {
+      return;
+    }
+    if (node.getId() != next.get(direction.opposite()).getId()) {
+      throw new IllegalArgumentException("Crystal links aren't set up right!");
+    }
+  }
+
+  private Map<Integer, List<String>> readInConnections(String neighborsFile) throws IOException {
+    String line;
+    try (BufferedReader reader = new BufferedReader(new FileReader(neighborsFile))) {
+      Map<Integer, List<String>> connections = new HashMap<>();
+      while ((line = reader.readLine()) != null) {
+        String[] parts = line.split(" ");
+        if (parts.length < 3) {
+          continue;
+        }
+        Integer nodeId = Integer.parseInt(parts[0]);
+        List<String> nodeConnections = connections.computeIfAbsent(nodeId, k -> new ArrayList<>());
+        nodeConnections.add(line);
+      }
+      return connections;
+    }
   }
 
   public Node getNode(int nodeId) {
     return nodes.get(nodeId);
   }
 
-  private void setUpLinks(int[] connections, Direction direction) {
-    Node prev = null;
-    for (int connection : connections) {
-      Node node = nodes.get(connection);
-      if (prev != null) {
-        prev.set(node, direction);
-        node.set(prev, direction.opposite());
-      }
-      prev = node;
-    }
+  public int size() {
+    return nodes.size();
   }
 
-  private static void checkArray(int[] arr, int size) {
-    Set<Integer> ints = new HashSet<>();
-    for (int anArr : arr) {
-      ints.add(anArr);
-    }
-    if (ints.size() != size) {
-      throw new IllegalArgumentException("Something wrong with array: " + Arrays.toString(arr) + ", size: " + ints.size() + ", initial size: " + arr.length);
-    }
-  }
-
-  private void checkLinks() {
-    for (Node node : nodes.values()) {
-      checkNode(node, Direction.Right);
-      checkNode(node, Direction.DownRight);
-      checkNode(node, Direction.DownLeft);
-      checkNode(node, Direction.Left);
-      checkNode(node, Direction.UpLeft);
-      checkNode(node, Direction.UpRight);
-    }
-  }
-
-  private void checkNode(Node node, Direction direction) {
-    if (node.get(direction) == null && terminals.get(node.value()) != direction) {
-//      throw new IllegalArgumentException("Node had unexpected null direction. value: " + node.value() + " , direction: " + direction.name());
-      System.out.println("Node had unexpected null direction. value: " + node.value() + " , direction: " + direction.name());
-    }
+  public Set<Integer> getNodeIds() {
+    return Collections.unmodifiableSet(nodes.keySet());
   }
 
   public static void main(String[] args) {
-    Crystal crystal = new Crystal();
+    Crystal crystal = new Crystal("/Users/carpentermp/Downloads/neighbors.txt");
     System.out.println();
   }
 

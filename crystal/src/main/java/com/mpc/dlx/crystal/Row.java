@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "squid:S1168"})
 public class Row {
 
   private final int nodeId;
@@ -17,13 +17,13 @@ public class Row {
     this.usedIds = usedIds;
   }
 
-  public byte[] getBytes() {
+  public byte[] getBytes(String[] columns) {
     if (usedIds == null) {
       return null;
     }
-    byte[] row = new byte[CrystalSolver.COLUMN_COUNT];
-    for (int i = 0; i < CrystalSolver.COLUMN_COUNT; i++) {
-      row[i] = (byte) (usedIds.contains(i + 1) ? 1 : 0);
+    byte[] row = new byte[columns.length];
+    for (int i = 0; i < columns.length; i++) {
+      row[i] = (byte) (usedIds.contains(Integer.parseInt(columns[i])) ? 1 : 0);
     }
     return row;
   }

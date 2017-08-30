@@ -3,7 +3,7 @@ package com.mpc.dlx.crystal;
 @SuppressWarnings("WeakerAccess")
 public class Node {
 
-  private final int value;
+  private final int id;
   private Node upLeft;
   private Node upRight;
   private Node right;
@@ -11,12 +11,12 @@ public class Node {
   private Node downLeft;
   private Node left;
 
-  public Node(int value) {
-    this.value = value;
+  public Node(int id) {
+    this.id = id;
   }
 
-  public int value() {
-    return value;
+  public int getId() {
+    return id;
   }
 
   public void set(Node node, Direction direction) {
@@ -58,6 +58,18 @@ public class Node {
         return upRight;
     }
     return null;
+  }
+
+  public boolean equals(Object object) {
+    if (object == null || !(object instanceof Node)) {
+      return false;
+    }
+    Node other = (Node) object;
+    return id == other.id;
+  }
+
+  public int hashCode() {
+    return Integer.hashCode(id);
   }
 
 }

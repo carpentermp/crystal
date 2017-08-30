@@ -66,14 +66,14 @@ public class Molecule {
 
   public Set<Integer> getUsedNodeIds(Node startingNode) {
     Set<Integer> usedNodeIds = new HashSet<>();
-    usedNodeIds.add(startingNode.value());
+    usedNodeIds.add(startingNode.getId());
     Node next = startingNode;
     for (Direction direction : buildInstructions) {
       next = next.get(direction);
       if (next == null) {
         return null;
       }
-      usedNodeIds.add(next.value());
+      usedNodeIds.add(next.getId());
     }
     return usedNodeIds;
   }

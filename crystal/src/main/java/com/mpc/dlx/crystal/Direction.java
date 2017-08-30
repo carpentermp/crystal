@@ -3,12 +3,18 @@ package com.mpc.dlx.crystal;
 @SuppressWarnings("WeakerAccess")
 public enum Direction {
 
-  UpLeft,
-  UpRight,
-  Left,
-  Right,
-  DownLeft,
-  DownRight;
+  UpLeft(5),
+  UpRight(6),
+  Left(4),
+  Right(1),
+  DownLeft(3),
+  DownRight(2);
+
+  private final int value;
+
+  Direction(int value) {
+    this.value = value;
+  }
 
   public static Direction[] rotate(Direction[] moves) {
     Direction[] rotatedMoves = new Direction[moves.length];
@@ -48,6 +54,15 @@ public enum Direction {
 
   private boolean isAlongAxis(Direction axis) {
     return this == axis || this.opposite() == axis;
+  }
+
+  public static Direction fromValue(int value) {
+    for (Direction direction : Direction.values()) {
+      if (direction.value == value) {
+        return direction;
+      }
+    }
+    throw new IllegalArgumentException("Invalid direction value: " + value);
   }
 
 }
