@@ -5,11 +5,16 @@ import java.util.*;
 @SuppressWarnings("WeakerAccess")
 public class Molecule {
 
+  private static final int[] DEFAULT_BEAD_IDS = new int[] {1, 2, 3, 4, 5};
+  private static final int[] M05_BEAD_IDS = new int[] {1, 4, 2, 3, 5};
+  private static final int[] M20_BEAD_IDS = new int[] {1, 2, 5, 3, 4};
+  private static final int[] M22_BEAD_IDS = new int[] {1, 4, 2, 5, 3};
+
   public static final Molecule m01 = new Molecule(Direction.Right, Direction.Right, Direction.Right, Direction.DownRight);
   public static final Molecule m02 = new Molecule(Direction.Right, Direction.Right, Direction.Right, Direction.DownLeft);
   public static final Molecule m03 = new Molecule(Direction.Right, Direction.Right, Direction.DownRight, Direction.Right);
   public static final Molecule m04 = new Molecule(Direction.Right, Direction.Right, Direction.DownLeft, Direction.Right);
-  public static final Molecule m05 = new Molecule(Direction.DownRight, Direction.UpRight, Direction.Right, Direction.DownRight); // numbers are different for this one
+  public static final Molecule m05 = new Molecule(M05_BEAD_IDS, Orientation.Left, Direction.DownRight, Direction.UpRight, Direction.Right, Direction.DownRight);
   public static final Molecule m06 = new Molecule(Direction.Right, Direction.Right, Direction.DownLeft, Direction.DownRight);
   public static final Molecule m07 = new Molecule(Direction.Right, Direction.DownRight, Direction.Right, Direction.DownLeft);
   public static final Molecule m08 = new Molecule(Direction.DownRight, Direction.Right, Direction.Right, Direction.DownRight);
@@ -24,18 +29,24 @@ public class Molecule {
   public static final Molecule m17 = new Molecule(Orientation.AChiral, Direction.DownRight, Direction.Right, Direction.Right, Direction.UpRight);
   public static final Molecule m18 = new Molecule(Orientation.AChiral, Direction.Right, Direction.DownRight, Direction.DownLeft, Direction.Left);
   public static final Molecule m19 = new Molecule(Orientation.AChiral, Direction.Right, Direction.Right, Direction.DownRight, Direction.UpLeft, Direction.UpRight); // backs up. Make "back" movement?
-  public static final Molecule m20 = new Molecule(Orientation.AChiral, Direction.Right, Direction.UpRight, Direction.DownRight, Direction.DownLeft); // numbers are different
+  public static final Molecule m20 = new Molecule(M20_BEAD_IDS, Orientation.AChiral, Direction.Right, Direction.UpRight, Direction.DownRight, Direction.DownLeft);
   public static final Molecule m21 = new Molecule(Orientation.AChiral, Direction.DownRight, Direction.UpRight, Direction.DownRight, Direction.UpRight);
-  public static final Molecule m22 = new Molecule(Orientation.Symmetric, Direction.DownRight, Direction.UpRight, Direction.UpRight, Direction.DownRight); // numbers are different
+  public static final Molecule m22 = new Molecule(M22_BEAD_IDS, Orientation.Symmetric, Direction.DownRight, Direction.UpRight, Direction.UpRight, Direction.DownRight);
 
   private final Orientation orientation;
   private final Direction[] buildInstructions;
+  private final int[] beadIds;
 
   public Molecule(Direction... buildInstructions) {
     this(Orientation.Left, buildInstructions);
   }
 
   public Molecule(Orientation orientation, Direction... buildInstructions) {
+    this(DEFAULT_BEAD_IDS, orientation, buildInstructions);
+  }
+
+  public Molecule(int[] beadIds, Orientation orientation, Direction... buildInstructions) {
+    this.beadIds = beadIds;
     this.orientation = orientation;
     this.buildInstructions = buildInstructions;
   }
