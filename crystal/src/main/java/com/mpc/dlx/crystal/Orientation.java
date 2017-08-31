@@ -8,6 +8,10 @@ public enum Orientation {
   Symmetric;
 
   public Orientation opposite() {
-    return this == Left ? Right : Left;
+    switch (this) {
+      case Left: return Right;
+      case Right: return Left;
+      default: return this;
+    }
   }
 }

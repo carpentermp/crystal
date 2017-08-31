@@ -30,4 +30,24 @@ public class TestNode {
     assertEquals(six, node.get(Direction.UpRight));
   }
 
+  @Test
+  public void testEquals() {
+    Node n1 = new Node(1);
+    Node n2 = new Node(2);
+    Node n3 = new Node(1);
+    assertNotEquals(n1, n2);
+    assertNotEquals(n2, n3);
+    assertEquals(n1, n3);
+  }
+
+  @Test
+  public void testHashCode() {
+    Node n1 = new Node(1);
+    Node n2 = new Node(2);
+    Node n3 = new Node(1);
+    assertNotEquals(n1.hashCode(), n2.hashCode());
+    assertNotEquals(n2.hashCode(), n3.hashCode());
+    assertEquals(n1.hashCode(), n3.hashCode());
+  }
+
 }

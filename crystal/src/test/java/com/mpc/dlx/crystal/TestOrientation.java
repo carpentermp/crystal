@@ -10,6 +10,8 @@ public class TestOrientation {
   public void testOrientation() {
     assertEquals(Orientation.Right, Orientation.Left.opposite());
     assertEquals(Orientation.Left, Orientation.Right.opposite());
+    assertEquals(Orientation.AChiral, Orientation.AChiral.opposite());
+    assertEquals(Orientation.Symmetric, Orientation.Symmetric.opposite());
   }
 
 }

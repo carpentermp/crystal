@@ -13,7 +13,7 @@ public class TestMolecule {
 
   private Molecule molecule;
   private Molecule mirrored;
-  private Crystal crystal = new Crystal("/Users/carpentermp/Downloads/neighbors.txt");
+  private Crystal crystal = new Crystal(Utils.getResourceFilename("neighbors.txt"));
 
   @Before
   public void setUp() {
@@ -42,25 +42,10 @@ public class TestMolecule {
     assertEquals(Direction.Left, rotatedDirections.get(4));
   }
 
-//  @Test
-//  public void testGetUsedNodeIds() {
-//    assertUsedNodeIds(molecule.getUsedNodeIds(crystal.getNode(19)), 19, 26, 27, 28, 21);
-//    assertUsedNodeIds(molecule.rotate().getUsedNodeIds(crystal.getNode(19)), 19, 25, 33, 40, 34);
-//    assertUsedNodeIds(molecule.rotate().rotate().getUsedNodeIds(crystal.getNode(19)), 19, 18, 24, 31, 32);
-//    assertUsedNodeIds(molecule.rotate().rotate().rotate().getUsedNodeIds(crystal.getNode(19)), 19, 12, 11, 44, 17);
-//    assertUsedNodeIds(molecule.rotate().rotate().rotate().rotate().getUsedNodeIds(crystal.getNode(19)), 19, 13, 8, 4, 7);
-//    assertUsedNodeIds(molecule.rotate().rotate().rotate().rotate().rotate().getUsedNodeIds(crystal.getNode(19)), 19, 20, 14, 10, 9);
-//
-//    assertUsedNodeIds(mirrored.getUsedNodeIds(crystal.getNode(19)), 19, 13, 14, 15, 21);
-//    assertUsedNodeIds(mirrored.rotate().getUsedNodeIds(crystal.getNode(19)), 19, 20, 27, 35, 34);
-//    assertUsedNodeIds(mirrored.rotate().rotate().getUsedNodeIds(crystal.getNode(19)), 19, 26, 33, 39, 32);
-//    assertUsedNodeIds(mirrored.rotate().rotate().rotate().getUsedNodeIds(crystal.getNode(19)), 19, 25, 24, 55, 17);
-//    assertUsedNodeIds(mirrored.rotate().rotate().rotate().rotate().getUsedNodeIds(crystal.getNode(19)), 19, 18, 11, 6, 7);
-//    assertUsedNodeIds(mirrored.rotate().rotate().rotate().rotate().rotate().getUsedNodeIds(crystal.getNode(19)), 19, 12, 8, 5, 9);
-//
-//    assertNull(molecule.getUsedNodeIds(crystal.getNode(60)));
-//    assertNull(mirrored.getUsedNodeIds(crystal.getNode(23)));
-//  }
+  @Test
+  public void testGetUsedNodeIds() {
+    assertUsedNodeIds(molecule.getUsedNodeIds(crystal.getNode(2820)), 2820, 1261, 1301, 1301, 2622);
+  }
 
   @Test
   public void testOrientation() {

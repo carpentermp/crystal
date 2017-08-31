@@ -19,11 +19,7 @@ public class CrystalSolver {
 
   public CrystalSolver(Molecule molecule, Crystal crystal) {
     this.crystal = crystal;
-    columnNames = crystal.getNodeIds()
-      .stream()
-      .map(Object::toString)
-      .collect(Collectors.toList())
-      .toArray(new String[crystal.size()]);
+    columnNames = crystal.getSortedNodeNames();
     molecules = buildMolecules(molecule);
     rows = buildRows(molecules);
     matrix = buildMatrix(rows);
@@ -97,7 +93,7 @@ public class CrystalSolver {
   }
 
   public static void main(String[] args) {
-    new CrystalSolver(Molecule.m05, new Crystal("/Users/carpentermp/Downloads/neighbors.txt")).solve();
+    new CrystalSolver(Molecule.m05, new Crystal(Utils.getResourceFilename("neighbors.txt"))).solve();
   }
 
 }

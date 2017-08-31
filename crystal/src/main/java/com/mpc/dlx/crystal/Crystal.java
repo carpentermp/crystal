@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @SuppressWarnings({"WeakerAccess", "squid:S1226", "squid:S1135", "squid:S106", "SameParameterValue"})
 public class Crystal {
@@ -146,6 +147,14 @@ public class Crystal {
 
   public Set<Integer> getNodeIds() {
     return Collections.unmodifiableSet(nodes.keySet());
+  }
+
+  public String[] getSortedNodeNames() {
+    return getNodeIds().stream()
+        .map(id -> Integer.toString(id))
+        .sorted()
+        .collect(Collectors.toList())
+        .toArray(new String[size()]);
   }
 
   public static void main(String[] args) {

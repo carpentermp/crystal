@@ -10,51 +10,53 @@ import static org.junit.Assert.*;
 
 public class TestRow {
 
-//  private Molecule molecule;
-//  private Set<Integer> usedIds;
-//  private Row row;
+  private Molecule molecule;
+  private Crystal crystal;
+  private Set<Integer> usedIds;
+  private Row row;
 
-//  @Before
-//  public void setUp() {
-//    molecule = new Molecule(Direction.DownRight, Direction.Right, Direction.Right, Direction.UpLeft, Direction.DownLeft);
-//    usedIds = molecule.getUsedNodeIds(new Crystal("/Users/carpentermp/Downloads/neighbors.txt").getNode(55));
-//    row = new Row(55, molecule, usedIds);
-//  }
+  @Before
+  public void setUp() {
+    molecule = new Molecule(Direction.DownRight, Direction.Right, Direction.Right, Direction.UpLeft, Direction.DownLeft);
+    crystal = new Crystal(Utils.getResourceFilename("neighbors.txt"));
+    usedIds = molecule.getUsedNodeIds(crystal.getNode(2820));
+    row = new Row(2820, molecule, usedIds);
+  }
 
-//  @Test
-//  public void testRow() throws Exception {
-//    assertEquals(55, row.getNodeId());
-//    assertEquals(molecule, row.getMolecule());
-//    assertTrue(usedIds.contains(55));
-//    assertTrue(usedIds.contains(31));
-//    assertTrue(usedIds.contains(32));
-//    assertTrue(usedIds.contains(33));
-//    assertTrue(usedIds.contains(25));
-//  }
-//
-//  @Test
-//  public void testBytes() {
-//    byte[] bytes = row.getBytes();
-//    assertEquals(1, bytes[55 - 1]);
-//    assertEquals(1, bytes[31 - 1]);
-//    assertEquals(1, bytes[32 - 1]);
-//    assertEquals(1, bytes[33 - 1]);
-//    assertEquals(1, bytes[25 - 1]);
-//    assertEquals(0, bytes[24 - 1]);
-//    assertEquals(0, bytes[34 - 1]);
-//    assertEquals(0, bytes[56 - 1]);
-//    assertEquals(0, bytes[10 - 1]);
-//  }
-//
-//  @Test
-//  public void testIsThisRow() throws Exception {
-//    assertTrue(row.isThisRow(usedIds));
-//    Set<Integer> otherUsedIds = new HashSet<>(usedIds);
-//    assertTrue(row.isThisRow(otherUsedIds));
-//    otherUsedIds.add(1);
-//    assertFalse(row.isThisRow(otherUsedIds));
-//    otherUsedIds.remove(55);
-//    assertFalse(row.isThisRow(otherUsedIds));
-//  }
+  @Test
+  public void testRow() throws Exception {
+    assertEquals(2820, row.getNodeId());
+    assertEquals(molecule, row.getMolecule());
+    assertTrue(usedIds.contains(2820));
+    assertTrue(usedIds.contains(1261));
+    assertTrue(usedIds.contains(1301));
+    assertTrue(usedIds.contains(1301));
+    assertTrue(usedIds.contains(2622));
+  }
+
+  @Test
+  public void testBytes() {
+    byte[] bytes = row.getBytes(crystal.getSortedNodeNames());
+    assertEquals(1, bytes[6]);
+    assertEquals(1, bytes[20]);
+    assertEquals(1, bytes[22]);
+    assertEquals(1, bytes[34]);
+    assertEquals(1, bytes[49]);
+    assertEquals(0, bytes[1]);
+    assertEquals(0, bytes[2]);
+    assertEquals(0, bytes[33]);
+    assertEquals(0, bytes[55]);
+  }
+
+  @Test
+  public void testIsThisRow() throws Exception {
+    assertTrue(row.isThisRow(usedIds));
+    Set<Integer> otherUsedIds = new HashSet<>(usedIds);
+    assertTrue(row.isThisRow(otherUsedIds));
+    otherUsedIds.add(1);
+    assertFalse(row.isThisRow(otherUsedIds));
+    otherUsedIds.remove(55);
+    assertFalse(row.isThisRow(otherUsedIds));
+  }
 
 }
