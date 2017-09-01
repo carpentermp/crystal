@@ -56,9 +56,13 @@ public class CrystalResult {
   }
 
   public String getBucketName() {
-    Orientation anOrientation = rows.get(0).getMolecule().getOrientation();
-    if (anOrientation == Orientation.AChiral || anOrientation == Orientation.Symmetric) {
-      return "achiral";
+    Orientation anOrientation = rows.stream()
+      .filter(r -> r.getMolecule().getOrientation() == Orientation.Left || r.getMolecule().getOrientation() == Orientation.Right)
+      .findAny()
+      .map(r -> r.getMolecule().getOrientation())
+      .orElse(null);
+    if (anOrientation == null) {
+      return "all";
     }
     return String.format("l%1$02dr%2$02d", getCountOfOrientation(Orientation.Left), getCountOfOrientation(Orientation.Right));
   }

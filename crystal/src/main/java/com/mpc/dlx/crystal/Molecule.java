@@ -33,6 +33,8 @@ public class Molecule {
   public static final Molecule m21 = new Molecule("m21", Orientation.AChiral, Direction.DownRight, Direction.UpRight, Direction.DownRight, Direction.UpRight);
   public static final Molecule m22 = new Molecule("m22", M22_BEAD_IDS, Orientation.Symmetric, Direction.DownRight, Direction.UpRight, Direction.UpRight, Direction.DownRight);
 
+  public static final Molecule hole = new Molecule("hole", new int[0], Orientation.Circular);
+
   public static final Molecule[] allMolecules = new Molecule[] {
     m01, m02, m03,
 //    m04,

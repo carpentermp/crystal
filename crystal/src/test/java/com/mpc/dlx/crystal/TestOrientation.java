@@ -12,6 +12,7 @@ public class TestOrientation {
     assertEquals(Orientation.Left, Orientation.Right.opposite());
     assertEquals(Orientation.AChiral, Orientation.AChiral.opposite());
     assertEquals(Orientation.Symmetric, Orientation.Symmetric.opposite());
+    assertEquals(Orientation.Circular, Orientation.Circular.opposite());
   }
 
 }

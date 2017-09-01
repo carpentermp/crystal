@@ -13,17 +13,17 @@ public class Crystal {
 
   private static final String NEIGHBORS_FILENAME = "neighbors.txt";
   private static final String COORDINATES_FILENAME = "replicated_coordinates.txt";
+  private static final int DEFAULT_MOLECULE_SIZE = 5;
 
   private final String name;
   private final Map<Integer, Node> nodes = new HashMap<>();
   private final Map<Integer, List<Coordinate>> coordinates;
-  // todo stuff for "holes" -- use "remainder". When > 0 then first hole goes at origin. Other holes float as one node molecules
 
   public Crystal(String baseDir) {
-    this(baseDir, nameFromBaseDir(baseDir));
+    this(baseDir, DEFAULT_MOLECULE_SIZE, nameFromBaseDir(baseDir));
   }
 
-  public Crystal(String baseDir, String name) {
+  public Crystal(String baseDir, int moleculeSize, String name) {
     this.name = name;
     baseDir = baseDir + (baseDir.endsWith("/") ? "" : "/");
     try {
@@ -41,11 +41,18 @@ public class Crystal {
           node.set(nodes.get(connectingNode), direction);
         }
       }
+      int holeCount = nodes.size() % moleculeSize;
+      if (holeCount != 0) {
+        removeNode(0);
+        holeCount--;
+        if (holeCount > 0) {
+          // todo temp for now choke on holes
+          throw new IllegalArgumentException("Unit cell with multiple holes not supported yet");
+        }
+      }
       this.coordinates = readInCoordinates(baseDir);
-      // todo kludge. for now, just remove the 0th node
-      removeNode(0);
       checkLinksBackAndForth();
-      checkNoDuplicateNodes();
+//      checkNoDuplicateNodes();
     }
     catch (IOException e) {
       throw new IllegalArgumentException(e);
@@ -74,12 +81,12 @@ public class Crystal {
     upLeftNode.set(null, Direction.DownRight);
     upRightNode.set(null, Direction.DownLeft);
     nodes.remove(nodeId);
-    checkDirection(rightNode, Direction.Right);
-    checkDirection(downRightNode, Direction.DownRight);
-    checkDirection(downLeftNode, Direction.DownLeft);
-    checkDirection(leftNode, Direction.Left);
-    checkDirection(upLeftNode, Direction.UpLeft);
-    checkDirection(upRightNode, Direction.UpRight);
+//    checkDirection(rightNode, Direction.Right);
+//    checkDirection(downRightNode, Direction.DownRight);
+//    checkDirection(downLeftNode, Direction.DownLeft);
+//    checkDirection(leftNode, Direction.Left);
+//    checkDirection(upLeftNode, Direction.UpLeft);
+//    checkDirection(upRightNode, Direction.UpRight);
   }
 
   private void checkDirection(Node node, Direction direction) {

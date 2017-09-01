@@ -82,16 +82,20 @@ public class CrystalSolver {
     if (usedIds == null) {
       return null;
     }
-    if (usedIds.size() != 5) {
-      throw new IllegalArgumentException("Bogus used ids set!");
+    if (usedIds.size() != rootMolecule.size()) {
+      // for small unit cells, the molecules wrap around on them themselves
+      return null;
+//      throw new IllegalArgumentException("Bogus used ids set!");
     }
     return new Row(nodeId, molecule, usedIds);
   }
 
   public CrystalSolver solve() {
-    ColumnObject h = DLX.buildSparseMatrix(matrix, columnNames);
-    DLX.solve(h, true, new CrystalResultProcessor());
-    System.out.println("For molecule " + rootMolecule.getName() + " there were " + count + " results!");
+    if (matrix.length > 0) {
+      ColumnObject h = DLX.buildSparseMatrix(matrix, columnNames);
+      DLX.solve(h, true, new CrystalResultProcessor());
+    }
+    System.out.println("For " + crystal.getName() + "-" + rootMolecule.getName() + " there were " + count + " results!");
     for (Map.Entry<String, List<CrystalResult>> entry : resultMap.entrySet()) {
       System.out.println(entry.getKey() + ": " + entry.getValue().size());
     }
@@ -129,14 +133,41 @@ public class CrystalSolver {
     }
 
   }
-  public static void main(String[] args) throws IOException {
-    String baseDir = "/Users/carpentermp/Downloads/textfiles/1372/";
+
+  private static void solveSeveralCrystals(String rootDir, int start, int end) {
+    for (int i = start; i <= end; i++) {
+      Crystal crystal = null;
+      Molecule m = Molecule.hole;
+      try {
+        String baseDir = Utils.addTrailingSlash(rootDir) + i + "/";
+        crystal = new Crystal(baseDir);
+        for (Molecule molecule : Molecule.allMolecules) {
+          m = molecule;
+          new CrystalSolver(molecule, crystal).solve();
+        }
+//        new CrystalSolver(Molecule.m22, crystal).solve();
+      }
+      catch (RuntimeException e) {
+        System.out.println("Failure solving crystal c" + i + "-" + m.getName() + " because of: " + e.getClass() + ": " + e.getLocalizedMessage());
+        if ("0".equals(e.getLocalizedMessage())) {
+          e.printStackTrace();
+        }
+      }
+    }
+  }
+
+  private static void solveACrystal(String baseDir) throws IOException {
     Crystal crystal = new Crystal(baseDir);
 //    for (Molecule molecule : Molecule.allMolecules) {
 //      new CrystalSolver(molecule, crystal).solve().output(baseDir);
 //    }
-    new CrystalSolver(Molecule.m05, crystal).solve().output(baseDir);
-//    new CrystalSolver(Molecule.m22, crystal).solve().output(baseDir);
+//    new CrystalSolver(Molecule.m05, crystal).solve().output(baseDir);
+    new CrystalSolver(Molecule.m22, crystal).solve().output(baseDir);
+  }
+
+  public static void main(String[] args) throws IOException {
+//    solveACrystal("/Users/carpentermp/Downloads/textfiles/1372/");
+    solveSeveralCrystals("/Users/carpentermp/Downloads/textfiles/", 1, 100);
   }
 
 }
