@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@SuppressWarnings({"WeakerAccess", "squid:S1226", "squid:S1135", "squid:S106", "SameParameterValue", "squid:HiddenFieldCheck", "squid:S3776"})
+@SuppressWarnings({"WeakerAccess", "squid:S1226", "squid:S1135", "squid:S106", "SameParameterValue", "squid:HiddenFieldCheck", "squid:S3776", "squid:S1612"})
 public class Crystal {
 
   private static final String NEIGHBORS_FILENAME = "neighbors.txt";
@@ -47,7 +47,7 @@ public class Crystal {
         holeCount--;
         if (holeCount > 0) {
           // todo temp for now choke on holes
-          throw new IllegalArgumentException("Unit cell with multiple holes not supported yet");
+          throw new IllegalArgumentException("Unit cell with multiple holes not supported yet. Min # of holes in this crystal: " + (holeCount + 1));
         }
       }
       this.coordinates = readInCoordinates(baseDir);
@@ -80,14 +80,6 @@ public class Crystal {
     upLeftNode.set(null, Direction.DownRight);
     upRightNode.set(null, Direction.DownLeft);
     nodes.remove(nodeId);
-  }
-
-  private boolean safeAddNode(Set<Node> nodes, Node node) {
-    if (node != null) {
-      nodes.add(node);
-      return true;
-    }
-    return false;
   }
 
   private void checkLinksBackAndForth() {
