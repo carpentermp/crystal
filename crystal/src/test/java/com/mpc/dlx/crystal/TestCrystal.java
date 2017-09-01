@@ -11,7 +11,7 @@ public class TestCrystal {
 
   @Before
   public void setUp() {
-    crystal = new Crystal(Utils.getResourceFilename("neighbors.txt"));
+    crystal = new Crystal(Utils.getResourceDirectory("neighbors.txt"));
   }
 
   @Test

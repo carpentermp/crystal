@@ -11,11 +11,17 @@ public class Crystal {
 
   private static final String NEIGHBORS_FILENAME = "neighbors.txt";
 
+  private final String name;
   private final String baseDir;
   private final Map<Integer, Node> nodes = new HashMap<>();
   // todo stuff for "holes" -- use "remainder". When > 0 then first hole goes at origin. Other holes float as one node molecules
 
   public Crystal(String baseDir) {
+    this(baseDir, nameFromBaseDir(baseDir));
+  }
+
+  public Crystal(String baseDir, String name) {
+    this.name = name;
     this.baseDir = baseDir + (baseDir.endsWith("/") ? "" : "/");
     try {
       Map<Integer, List<String>> connections = readInConnections(this.baseDir);
@@ -40,6 +46,13 @@ public class Crystal {
     catch (IOException e) {
       throw new IllegalArgumentException(e);
     }
+  }
+
+  private static String nameFromBaseDir(String baseDir) {
+    if (baseDir.endsWith("/")) {
+      baseDir = baseDir.substring(0, baseDir.lastIndexOf("/"));
+    }
+    return "c" + baseDir.substring(baseDir.lastIndexOf("/") + 1);
   }
 
   private void removeNode(int nodeId) {
@@ -166,9 +179,13 @@ public class Crystal {
     return baseDir;
   }
 
+  public String getName() {
+    return name;
+  }
+
   public static void main(String[] args) {
     Crystal crystal = new Crystal("/Users/merlin/Downloads/textfiles/1372/");
-    System.out.println();
+    System.out.println("Crystal: " + crystal.getName());
   }
 
 }

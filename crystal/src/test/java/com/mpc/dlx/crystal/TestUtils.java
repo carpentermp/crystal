@@ -8,7 +8,7 @@ public class TestUtils {
 
   @Test
   public void testGetResourceFilename() {
-    assertNotNull(Utils.getResourceFilename("neighbors.txt"));
+    assertNotNull(Utils.getResourceDirectory("neighbors.txt"));
   }
 
 }

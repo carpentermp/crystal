@@ -13,11 +13,11 @@ public class TestMolecule {
 
   private Molecule molecule;
   private Molecule mirrored;
-  private Crystal crystal = new Crystal(Utils.getResourceFilename("neighbors.txt"));
+  private Crystal crystal = new Crystal(Utils.getResourceDirectory("neighbors.txt"));
 
   @Before
   public void setUp() {
-    molecule = new Molecule(Direction.DownRight, Direction.Right, Direction.Right, Direction.UpLeft, Direction.DownLeft);
+    molecule = new Molecule("M00", Direction.DownRight, Direction.Right, Direction.Right, Direction.UpLeft, Direction.DownLeft);
     mirrored = molecule.mirror(Direction.Left);
   }
 
@@ -62,9 +62,9 @@ public class TestMolecule {
 
   @Test
   public void testEquals() {
-    Molecule m1 = new Molecule(Direction.Left, Direction.DownLeft);
-    Molecule m2 = new Molecule(Direction.Left, Direction.DownLeft);
-    Molecule m3 = new Molecule(Direction.Left, Direction.DownRight);
+    Molecule m1 = new Molecule("M00", Direction.Left, Direction.DownLeft);
+    Molecule m2 = new Molecule("M00", Direction.Left, Direction.DownLeft);
+    Molecule m3 = new Molecule("M00", Direction.Left, Direction.DownRight);
     assertEquals(m1, m2);
     assertNotEquals(m1, m3);
     assertFalse(m1.equals(null));

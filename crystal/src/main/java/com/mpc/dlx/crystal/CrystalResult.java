@@ -59,4 +59,9 @@ public class CrystalResult {
     return Collections.unmodifiableList(rows);
   }
 
+  public String toJson() {
+    // todo
+    return "{}";
+  }
+
 }

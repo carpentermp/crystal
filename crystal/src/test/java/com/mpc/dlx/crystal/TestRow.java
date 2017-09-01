@@ -17,8 +17,8 @@ public class TestRow {
 
   @Before
   public void setUp() {
-    molecule = new Molecule(Direction.DownRight, Direction.Right, Direction.Right, Direction.UpLeft, Direction.DownLeft);
-    crystal = new Crystal(Utils.getResourceFilename("neighbors.txt"));
+    molecule = new Molecule("M00", Direction.DownRight, Direction.Right, Direction.Right, Direction.UpLeft, Direction.DownLeft);
+    crystal = new Crystal(Utils.getResourceDirectory("neighbors.txt"));
     usedIds = molecule.getUsedNodeIds(crystal.getNode(2820));
     row = new Row(2820, molecule, usedIds);
   }

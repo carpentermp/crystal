@@ -5,12 +5,17 @@ import au.id.bjf.dlx.DLXResult;
 import au.id.bjf.dlx.DLXResultProcessor;
 import au.id.bjf.dlx.data.ColumnObject;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @SuppressWarnings({"WeakerAccess", "squid:S106", "squid:HiddenFieldCheck"})
 public class CrystalSolver {
 
+  private final Molecule rootMolecule;
   private final Crystal crystal;
   final String[] columnNames;
   final List<Molecule> molecules;
@@ -20,6 +25,7 @@ public class CrystalSolver {
   private final Map<String, List<CrystalResult>> resultMap = new HashMap<>();
 
   public CrystalSolver(Molecule molecule, Crystal crystal) {
+    rootMolecule = molecule;
     this.crystal = crystal;
     columnNames = crystal.getSortedNodeNames();
     molecules = buildMolecules(molecule);
@@ -83,12 +89,32 @@ public class CrystalSolver {
     return new Row(nodeId, molecule, usedIds);
   }
 
-  public void solve() {
+  public CrystalSolver solve() {
     ColumnObject h = DLX.buildSparseMatrix(matrix, columnNames);
     DLX.solve(h, true, new CrystalResultProcessor());
     System.out.println("There were " + count + " results!");
     for (Map.Entry<String, List<CrystalResult>> entry : resultMap.entrySet()) {
       System.out.println(entry.getKey() + ": " + entry.getValue().size());
+    }
+    return this;
+  }
+
+  public void output(String outputDir) throws IOException {
+    File moleculeDir = Utils.createSubDir(outputDir, rootMolecule.getName());
+    for (Map.Entry<String, List<CrystalResult>> entry : resultMap.entrySet()) {
+      outputBucket(moleculeDir, entry.getKey(), entry.getValue());
+    }
+  }
+
+  private void outputBucket(File moleculeDir, String bucketName, List<CrystalResult> results) throws IOException {
+    File bucketDir = Utils.createSubDir(moleculeDir.getAbsolutePath(), bucketName);
+    int count = 0;
+    for (CrystalResult result : results) {
+      String json = result.toJson();
+      String filename = Utils.addTrailingSlash(bucketDir.getAbsolutePath()) + crystal.getName() + "_" + rootMolecule.getName() + "_" + bucketName + "_" + String.format("%04d", count++) + ".json";
+      try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
+        writer.write(json);
+      }
     }
   }
 
@@ -104,8 +130,9 @@ public class CrystalSolver {
     }
 
   }
-  public static void main(String[] args) {
-    new CrystalSolver(Molecule.m05, new Crystal("/Users/merlin/Downloads/textfiles/1372/")).solve();
+  public static void main(String[] args) throws IOException {
+    String crystalDir = "/Users/merlin/Downloads/textfiles/1372/";
+    new CrystalSolver(Molecule.m05, new Crystal(crystalDir)).solve().output(crystalDir);
   }
 
 }
