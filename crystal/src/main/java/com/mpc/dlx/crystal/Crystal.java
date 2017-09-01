@@ -9,16 +9,20 @@ import java.util.stream.Collectors;
 @SuppressWarnings({"WeakerAccess", "squid:S1226", "squid:S1135", "squid:S106", "SameParameterValue"})
 public class Crystal {
 
+  private static final String NEIGHBORS_FILENAME = "neighbors.txt";
+
+  private final String baseDir;
   private final Map<Integer, Node> nodes = new HashMap<>();
   // todo stuff for "holes" -- use "remainder". When > 0 then first hole goes at origin. Other holes float as one node molecules
 
-  public Crystal(String neighborsFile) {
+  public Crystal(String baseDir) {
+    this.baseDir = baseDir + (baseDir.endsWith("/") ? "" : "/");
     try {
-      Map<Integer, List<String>> connections = readInConnections(neighborsFile);
+      Map<Integer, List<String>> connections = readInConnections(this.baseDir);
       for (Integer nodeId : connections.keySet()) {
         nodes.put(nodeId, new Node(nodeId));
       }
-      for (Map.Entry<Integer, List<String>> entry  : connections.entrySet()) {
+      for (Map.Entry<Integer, List<String>> entry : connections.entrySet()) {
         Node node = nodes.get(entry.getKey());
         List<String> nodeConnections = entry.getValue();
         for (String line : nodeConnections) {
@@ -120,7 +124,8 @@ public class Crystal {
     }
   }
 
-  private Map<Integer, List<String>> readInConnections(String neighborsFile) throws IOException {
+  private Map<Integer, List<String>> readInConnections(String baseDir) throws IOException {
+    String neighborsFile = baseDir + NEIGHBORS_FILENAME;
     String line;
     try (BufferedReader reader = new BufferedReader(new FileReader(neighborsFile))) {
       Map<Integer, List<String>> connections = new HashMap<>();
@@ -157,8 +162,12 @@ public class Crystal {
         .toArray(new String[size()]);
   }
 
+  public String getBaseDir() {
+    return baseDir;
+  }
+
   public static void main(String[] args) {
-    Crystal crystal = new Crystal("/Users/carpentermp/Downloads/neighbors.txt");
+    Crystal crystal = new Crystal("/Users/merlin/Downloads/textfiles/1372/");
     System.out.println();
   }
 

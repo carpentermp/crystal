@@ -1,11 +1,11 @@
 package com.mpc.dlx.crystal;
 
 import au.id.bjf.dlx.DLX;
+import au.id.bjf.dlx.DLXResult;
+import au.id.bjf.dlx.DLXResultProcessor;
 import au.id.bjf.dlx.data.ColumnObject;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @SuppressWarnings({"WeakerAccess", "squid:S106", "squid:HiddenFieldCheck"})
@@ -16,6 +16,8 @@ public class CrystalSolver {
   final List<Molecule> molecules;
   final List<Row> rows;
   final byte[][] matrix;
+  private int count = 0;
+  private final Map<String, List<CrystalResult>> resultMap = new HashMap<>();
 
   public CrystalSolver(Molecule molecule, Crystal crystal) {
     this.crystal = crystal;
@@ -83,17 +85,27 @@ public class CrystalSolver {
 
   public void solve() {
     ColumnObject h = DLX.buildSparseMatrix(matrix, columnNames);
-    CrystalResultProcessor resultProcessor = new CrystalResultProcessor(rows);
-    DLX.solve(h, true, resultProcessor);
-    System.out.println("There were " + resultProcessor.getCount() + " results!");
-    int[] leftCounts = resultProcessor.getLeftCounts();
-    for (int i = 0; i < leftCounts.length; i++) {
-      System.out.println("  Solutions where left-side molecules was " + i + ": " + leftCounts[i]);
+    DLX.solve(h, true, new CrystalResultProcessor());
+    System.out.println("There were " + count + " results!");
+    for (Map.Entry<String, List<CrystalResult>> entry : resultMap.entrySet()) {
+      System.out.println(entry.getKey() + ": " + entry.getValue().size());
     }
   }
 
+  public class CrystalResultProcessor implements DLXResultProcessor {
+
+    public boolean processResult(DLXResult dlxResult) {
+      count++;
+      CrystalResult result = new CrystalResult(dlxResult, rows);
+      String leftRight = String.format("l%1$02dr%2$02d", result.getLeftCount(), result.getRightCount());
+      List<CrystalResult> results = resultMap.computeIfAbsent(leftRight, k -> new ArrayList<>());
+      results.add(result);
+      return true; // keep going
+    }
+
+  }
   public static void main(String[] args) {
-    new CrystalSolver(Molecule.m05, new Crystal(Utils.getResourceFilename("neighbors.txt"))).solve();
+    new CrystalSolver(Molecule.m05, new Crystal("/Users/merlin/Downloads/textfiles/1372/")).solve();
   }
 
 }
