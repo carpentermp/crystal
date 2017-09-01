@@ -17,7 +17,7 @@ public class TestMolecule {
 
   @Before
   public void setUp() {
-    molecule = new Molecule("M00", Direction.DownRight, Direction.Right, Direction.Right, Direction.UpLeft, Direction.DownLeft);
+    molecule = Molecule.m05;
     mirrored = molecule.mirror(Direction.Left);
   }
 
@@ -25,10 +25,9 @@ public class TestMolecule {
   public void testMirror() {
     List<Direction> mirroredDirections = mirrored.getDirections();
     assertEquals(Direction.UpRight, mirroredDirections.get(0));
-    assertEquals(Direction.Right, mirroredDirections.get(1));
+    assertEquals(Direction.DownRight, mirroredDirections.get(1));
     assertEquals(Direction.Right, mirroredDirections.get(2));
-    assertEquals(Direction.DownLeft, mirroredDirections.get(3));
-    assertEquals(Direction.UpLeft, mirroredDirections.get(4));
+    assertEquals(Direction.UpRight, mirroredDirections.get(3));
   }
 
   @Test
@@ -36,15 +35,35 @@ public class TestMolecule {
     Molecule rotated = molecule.rotate();
     List<Direction> rotatedDirections = rotated.getDirections();
     assertEquals(Direction.DownLeft, rotatedDirections.get(0));
-    assertEquals(Direction.DownRight, rotatedDirections.get(1));
+    assertEquals(Direction.Right, rotatedDirections.get(1));
     assertEquals(Direction.DownRight, rotatedDirections.get(2));
-    assertEquals(Direction.UpRight, rotatedDirections.get(3));
-    assertEquals(Direction.Left, rotatedDirections.get(4));
+    assertEquals(Direction.DownLeft, rotatedDirections.get(3));
   }
 
   @Test
   public void testGetUsedNodeIds() {
-    assertUsedNodeIds(molecule.getUsedNodeIds(crystal.getNode(2820)), 2820, 1261, 1301, 1301, 2622);
+    Node startingNode = crystal.getNode(2820);
+    Set<Integer> usedNodeIds = molecule.getUsedNodeIds(startingNode);
+    assertUsedNodeIds(usedNodeIds, 2820, 2582, 1063, 1261, 2622);
+    usedNodeIds = Molecule.m19.getUsedNodeIds(startingNode);
+    assertUsedNodeIds(usedNodeIds, 2820, 2582, 2622, 1063, 1062);
+  }
+
+  @Test
+  public void testGetBeadNode() {
+    Node startingNode = crystal.getNode(2820);
+
+    assertEquals(2820, Molecule.m22.getBeadNode(startingNode, 1).getId());
+    assertEquals(2582, Molecule.m22.getBeadNode(startingNode, 2).getId());
+    assertEquals(2622, Molecule.m22.getBeadNode(startingNode, 3).getId());
+    assertEquals(1261, Molecule.m22.getBeadNode(startingNode, 4).getId());
+    assertEquals(1022, Molecule.m22.getBeadNode(startingNode, 5).getId());
+
+    assertEquals(2820, Molecule.m19.getBeadNode(startingNode, 1).getId());
+    assertEquals(2582, Molecule.m19.getBeadNode(startingNode, 2).getId());
+    assertEquals(2622, Molecule.m19.getBeadNode(startingNode, 3).getId());
+    assertEquals(1063, Molecule.m19.getBeadNode(startingNode, 4).getId());
+    assertEquals(1062, Molecule.m19.getBeadNode(startingNode, 5).getId());
   }
 
   @Test
@@ -69,6 +88,15 @@ public class TestMolecule {
     assertNotEquals(m1, m3);
     assertFalse(m1.equals(null));
     assertFalse(m1.equals(crystal));
+  }
+
+  @Test
+  public void testHash() {
+    Molecule m1 = new Molecule("M00", Direction.Left, Direction.DownLeft);
+    Molecule m2 = new Molecule("M00", Direction.Left, Direction.DownLeft);
+    Molecule m3 = new Molecule("M00", Direction.Left, Direction.DownRight);
+    assertEquals(m1.hashCode(), m2.hashCode());
+    assertNotEquals(m1.hashCode(), m3.hashCode());
   }
 
 }

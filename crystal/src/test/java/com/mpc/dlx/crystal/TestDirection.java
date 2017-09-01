@@ -67,7 +67,7 @@ public class TestDirection {
     assertEquals(Direction.UpLeft, Direction.fromValue(5));
     assertEquals(Direction.UpRight, Direction.fromValue(6));
     try {
-      Direction.fromValue(0);
+      Direction.fromValue(99);
       fail("should have failed with direction: 0");
     }
     catch (IllegalArgumentException e) {

@@ -1,6 +1,6 @@
 package com.mpc.dlx.crystal;
 
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "squid:S00115"})
 public enum Direction {
 
   UpLeft(5),
@@ -8,7 +8,8 @@ public enum Direction {
   Left(4),
   Right(1),
   DownLeft(3),
-  DownRight(2);
+  DownRight(2),
+  Back(0);
 
   private final int value;
 
@@ -36,6 +37,7 @@ public enum Direction {
       case DownRight: return DownLeft;
       case DownLeft: return Left;
       case Left: return UpLeft;
+      case Back: return Back;
       default:
         throw new UnsupportedOperationException("Unknown move type!");
     }

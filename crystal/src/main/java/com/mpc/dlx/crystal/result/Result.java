@@ -4,9 +4,18 @@ import java.util.List;
 
 public class Result {
 
+  private String crystal;
   private String molecule;
   private List<Placement> placements;
   private List<Adjacency> adjacencies;
+
+  public String getCrystal() {
+    return crystal;
+  }
+
+  public void setCrystal(String crystal) {
+    this.crystal = crystal;
+  }
 
   public String getMolecule() {
     return molecule;

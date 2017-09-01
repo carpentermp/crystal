@@ -91,10 +91,11 @@ public class CrystalSolver {
   public CrystalSolver solve() {
     ColumnObject h = DLX.buildSparseMatrix(matrix, columnNames);
     DLX.solve(h, true, new CrystalResultProcessor());
-    System.out.println("There were " + count + " results!");
+    System.out.println("For molecule " + rootMolecule.getName() + " there were " + count + " results!");
     for (Map.Entry<String, List<CrystalResult>> entry : resultMap.entrySet()) {
       System.out.println(entry.getKey() + ": " + entry.getValue().size());
     }
+    System.out.println();
     return this;
   }
 
@@ -129,8 +130,13 @@ public class CrystalSolver {
 
   }
   public static void main(String[] args) throws IOException {
-    String crystalDir = "/Users/carpentermp/Downloads/textfiles/1372/";
-    new CrystalSolver(Molecule.m05, new Crystal(crystalDir)).solve().output(crystalDir);
+    String baseDir = "/Users/carpentermp/Downloads/textfiles/1372/";
+    Crystal crystal = new Crystal(baseDir);
+//    for (Molecule molecule : Molecule.allMolecules) {
+//      new CrystalSolver(molecule, crystal).solve().output(baseDir);
+//    }
+    new CrystalSolver(Molecule.m05, crystal).solve().output(baseDir);
+//    new CrystalSolver(Molecule.m22, crystal).solve().output(baseDir);
   }
 
 }

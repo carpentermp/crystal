@@ -1,6 +1,6 @@
 package com.mpc.dlx.crystal;
 
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "squid:SwitchLastCaseIsDefaultCheck"})
 public class Node {
 
   private final int id;
@@ -39,6 +39,8 @@ public class Node {
       case UpRight:
         upRight = node;
         break;
+      default:
+        throw new IllegalArgumentException("Invalid direction to set!");
     }
   }
 

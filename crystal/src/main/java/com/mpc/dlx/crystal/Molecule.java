@@ -2,7 +2,7 @@ package com.mpc.dlx.crystal;
 
 import java.util.*;
 
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "squid:S1168", "squid:S2386", "squid:S2259", "unused"})
 public class Molecule {
 
   private static final int[] DEFAULT_BEAD_IDS = new int[] {1, 2, 3, 4, 5};
@@ -20,7 +20,7 @@ public class Molecule {
   public static final Molecule m08 = new Molecule("m08", Direction.DownRight, Direction.Right, Direction.Right, Direction.DownRight);
   public static final Molecule m09 = new Molecule("m09", Direction.Right, Direction.Right, Direction.DownRight, Direction.DownLeft);
   public static final Molecule m10 = new Molecule("m10", Direction.Right, Direction.DownRight, Direction.Right, Direction.UpRight);
-  public static final Molecule m11 = new Molecule("m11", Direction.Right, Direction.DownRight, Direction.Right, Direction.Left, Direction.DownLeft); // backs up. Make a "back" movement?
+  public static final Molecule m11 = new Molecule("m11", Direction.Right, Direction.DownRight, Direction.Right, Direction.Back, Direction.DownLeft);
   public static final Molecule m12 = new Molecule("m12", Orientation.Symmetric, Direction.Right, Direction.Right, Direction.Right, Direction.Right);
   public static final Molecule m13 = new Molecule("m13", Orientation.AChiral, Direction.Right, Direction.DownRight, Direction.UpRight, Direction.Right);
   public static final Molecule m14 = new Molecule("m14", Orientation.AChiral, Direction.Right, Direction.Right, Direction.DownRight, Direction.DownRight);
@@ -28,10 +28,16 @@ public class Molecule {
   public static final Molecule m16 = new Molecule("m16", Orientation.AChiral, Direction.Right, Direction.Right, Direction.DownLeft, Direction.DownLeft);
   public static final Molecule m17 = new Molecule("m17", Orientation.AChiral, Direction.DownRight, Direction.Right, Direction.Right, Direction.UpRight);
   public static final Molecule m18 = new Molecule("m18", Orientation.AChiral, Direction.Right, Direction.DownRight, Direction.DownLeft, Direction.Left);
-  public static final Molecule m19 = new Molecule("m19", Orientation.AChiral, Direction.Right, Direction.Right, Direction.DownRight, Direction.UpLeft, Direction.UpRight); // backs up. Make "back" movement?
+  public static final Molecule m19 = new Molecule("m19", Orientation.AChiral, Direction.Right, Direction.Right, Direction.DownRight, Direction.Back, Direction.UpRight);
   public static final Molecule m20 = new Molecule("m20", M20_BEAD_IDS, Orientation.AChiral, Direction.Right, Direction.UpRight, Direction.DownRight, Direction.DownLeft);
   public static final Molecule m21 = new Molecule("m21", Orientation.AChiral, Direction.DownRight, Direction.UpRight, Direction.DownRight, Direction.UpRight);
   public static final Molecule m22 = new Molecule("m22", M22_BEAD_IDS, Orientation.Symmetric, Direction.DownRight, Direction.UpRight, Direction.UpRight, Direction.DownRight);
+
+  public static final Molecule[] allMolecules = new Molecule[] {
+    m01, m02, m03,
+//    m04,
+    m05, m06, m07, m08, m09, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20, m21, m22
+  };
 
   private final String name;
   private final Orientation orientation;
@@ -81,15 +87,44 @@ public class Molecule {
     return Arrays.asList(buildInstructions);
   }
 
-  public int[] getBeadIds() {
-    return beadIds;
+  @SuppressWarnings({"ForLoopReplaceableByForEach", "ConstantConditions"})
+  public Node getBeadNode(Node startingNode, int beadId) {
+    Node prev = null;
+    Node next = startingNode;
+    int directionIndex = 0;
+    for (int i = 0; i < beadIds.length; i++) {
+      if (beadId == beadIds[i]) {
+        return next;
+      }
+      Direction nextDirection = buildInstructions[directionIndex++];
+      if (nextDirection == Direction.Back) {
+        nextDirection = buildInstructions[directionIndex++];
+        next = prev;
+      }
+      prev = next;
+      next = next.get(nextDirection);
+    }
+    throw new IllegalArgumentException("Bad bead id: " + beadId);
+  }
+
+  public int size() {
+    return beadIds.length;
   }
 
   public Set<Integer> getUsedNodeIds(Node startingNode) {
     Set<Integer> usedNodeIds = new HashSet<>();
     usedNodeIds.add(startingNode.getId());
+    Node prev = null;
     Node next = startingNode;
     for (Direction direction : buildInstructions) {
+      if (direction == Direction.Back) {
+        if (prev == null) {
+          throw new IllegalArgumentException("Bad molecule build instructions--you can't back up until you go forward");
+        }
+        next = prev;
+        continue;
+      }
+      prev = next;
       next = next.get(direction);
       if (next == null) {
         return null;

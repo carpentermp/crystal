@@ -5,18 +5,16 @@ import com.mpc.dlx.crystal.result.Coordinate;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.Reader;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@SuppressWarnings({"WeakerAccess", "squid:S1226", "squid:S1135", "squid:S106", "SameParameterValue"})
+@SuppressWarnings({"WeakerAccess", "squid:S1226", "squid:S1135", "squid:S106", "SameParameterValue", "squid:HiddenFieldCheck", "squid:S3776"})
 public class Crystal {
 
   private static final String NEIGHBORS_FILENAME = "neighbors.txt";
   private static final String COORDINATES_FILENAME = "replicated_coordinates.txt";
 
   private final String name;
-  private final String baseDir;
   private final Map<Integer, Node> nodes = new HashMap<>();
   private final Map<Integer, List<Coordinate>> coordinates;
   // todo stuff for "holes" -- use "remainder". When > 0 then first hole goes at origin. Other holes float as one node molecules
@@ -27,9 +25,9 @@ public class Crystal {
 
   public Crystal(String baseDir, String name) {
     this.name = name;
-    this.baseDir = baseDir + (baseDir.endsWith("/") ? "" : "/");
+    baseDir = baseDir + (baseDir.endsWith("/") ? "" : "/");
     try {
-      Map<Integer, List<String>> connections = readInConnections(this.baseDir);
+      Map<Integer, List<String>> connections = readInConnections(baseDir);
       for (Integer nodeId : connections.keySet()) {
         nodes.put(nodeId, new Node(nodeId));
       }
@@ -43,7 +41,7 @@ public class Crystal {
           node.set(nodes.get(connectingNode), direction);
         }
       }
-      this.coordinates = readInCoordinates(this.baseDir);
+      this.coordinates = readInCoordinates(baseDir);
       // todo kludge. for now, just remove the 0th node
       removeNode(0);
       checkLinksBackAndForth();
@@ -197,10 +195,6 @@ public class Crystal {
         .sorted()
         .collect(Collectors.toList())
         .toArray(new String[size()]);
-  }
-
-  public String getBaseDir() {
-    return baseDir;
   }
 
   public String getName() {
