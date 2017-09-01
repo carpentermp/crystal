@@ -52,7 +52,6 @@ public class Crystal {
       }
       this.coordinates = readInCoordinates(baseDir);
       checkLinksBackAndForth();
-//      checkNoDuplicateNodes();
     }
     catch (IOException e) {
       throw new IllegalArgumentException(e);
@@ -81,42 +80,6 @@ public class Crystal {
     upLeftNode.set(null, Direction.DownRight);
     upRightNode.set(null, Direction.DownLeft);
     nodes.remove(nodeId);
-//    checkDirection(rightNode, Direction.Right);
-//    checkDirection(downRightNode, Direction.DownRight);
-//    checkDirection(downLeftNode, Direction.DownLeft);
-//    checkDirection(leftNode, Direction.Left);
-//    checkDirection(upLeftNode, Direction.UpLeft);
-//    checkDirection(upRightNode, Direction.UpRight);
-  }
-
-  private void checkDirection(Node node, Direction direction) {
-    Set<Integer> nodeIds = new HashSet<>(nodes.keySet());
-    while (node != null) {
-      nodeIds.remove(node.getId());
-      node = node.get(direction);
-    }
-    if (!nodeIds.isEmpty()) {
-      throw new IllegalArgumentException("Bad crystal!");
-    }
-  }
-
-  private void checkNoDuplicateNodes() {
-    for (Node node : nodes.values()) {
-      int countWeShouldHave = 6;
-      Set<Node> nodesAllAround = new HashSet<>();
-      countWeShouldHave -= safeAddNode(nodesAllAround, node.get(Direction.Right)) ? 0 : 1;
-      countWeShouldHave -= safeAddNode(nodesAllAround, node.get(Direction.DownRight)) ? 0 : 1;
-      countWeShouldHave -= safeAddNode(nodesAllAround, node.get(Direction.DownLeft)) ? 0 : 1;
-      countWeShouldHave -= safeAddNode(nodesAllAround, node.get(Direction.Left)) ? 0 : 1;
-      countWeShouldHave -= safeAddNode(nodesAllAround, node.get(Direction.UpLeft)) ? 0 : 1;
-      countWeShouldHave -= safeAddNode(nodesAllAround, node.get(Direction.UpRight)) ? 0 : 1;
-      if (nodesAllAround.size() != countWeShouldHave) {
-        throw new IllegalArgumentException("Found duplicate node neighbor!");
-      }
-      if (countWeShouldHave < 5) {
-        throw new IllegalArgumentException("Too many nulls on a node");
-      }
-    }
   }
 
   private boolean safeAddNode(Set<Node> nodes, Node node) {

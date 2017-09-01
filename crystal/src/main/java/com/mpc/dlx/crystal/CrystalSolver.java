@@ -167,7 +167,7 @@ public class CrystalSolver {
 
   public static void main(String[] args) throws IOException {
 //    solveACrystal("/Users/carpentermp/Downloads/textfiles/1372/");
-    solveSeveralCrystals("/Users/carpentermp/Downloads/textfiles/", 1, 100);
+    solveSeveralCrystals("/Users/carpentermp/Downloads/textfiles/", 1, 300);
   }
 
 }
