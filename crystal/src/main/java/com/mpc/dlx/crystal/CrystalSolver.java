@@ -10,7 +10,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @SuppressWarnings({"WeakerAccess", "squid:S106", "squid:HiddenFieldCheck"})
 public class CrystalSolver {
@@ -110,7 +109,7 @@ public class CrystalSolver {
     File bucketDir = Utils.createSubDir(moleculeDir.getAbsolutePath(), bucketName);
     int count = 0;
     for (CrystalResult result : results) {
-      String json = result.toJson();
+      String json = result.toJson(crystal, rootMolecule);
       String filename = Utils.addTrailingSlash(bucketDir.getAbsolutePath()) + crystal.getName() + "_" + rootMolecule.getName() + "_" + bucketName + "_" + String.format("%04d", count++) + ".json";
       try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
         writer.write(json);
@@ -123,15 +122,14 @@ public class CrystalSolver {
     public boolean processResult(DLXResult dlxResult) {
       count++;
       CrystalResult result = new CrystalResult(dlxResult, rows);
-      String leftRight = String.format("l%1$02dr%2$02d", result.getLeftCount(), result.getRightCount());
-      List<CrystalResult> results = resultMap.computeIfAbsent(leftRight, k -> new ArrayList<>());
+      List<CrystalResult> results = resultMap.computeIfAbsent(result.getBucketName(), k -> new ArrayList<>());
       results.add(result);
       return true; // keep going
     }
 
   }
   public static void main(String[] args) throws IOException {
-    String crystalDir = "/Users/merlin/Downloads/textfiles/1372/";
+    String crystalDir = "/Users/carpentermp/Downloads/textfiles/1372/";
     new CrystalSolver(Molecule.m05, new Crystal(crystalDir)).solve().output(crystalDir);
   }
 

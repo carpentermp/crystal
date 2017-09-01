@@ -1,22 +1,24 @@
 package com.mpc.dlx.crystal;
 
 import au.id.bjf.dlx.DLXResult;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.mpc.dlx.crystal.result.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "squid:S1640", "squid:HiddenFieldCheck"})
 public class CrystalResult {
 
-  private final int leftCount;
+  private static final Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+
+  private final Map<Orientation, Integer> orientationCounts;
   private final List<Row> rows;
 
   public CrystalResult(DLXResult dlxResult, List<Row> allRows) {
     this.rows = convertResultToRows(dlxResult, allRows);
-    this.leftCount = countLeftOrientedMolecules(rows);
+    this.orientationCounts = countOrientations(rows);
   }
 
   private List<Row> convertResultToRows(DLXResult result, List<Row> allRows) {
@@ -40,28 +42,53 @@ public class CrystalResult {
         .orElse(null);
   }
 
-  private int countLeftOrientedMolecules(List<Row> resultRows) {
-    return resultRows.stream()
-        .filter(r -> r.getMolecule().getOrientation() == Orientation.Left)
-        .collect(Collectors.toList())
-        .size();
+  private Map<Orientation, Integer> countOrientations(List<Row> resultRows) {
+    Map<Orientation, Integer> orientationCounts = new HashMap<>();
+    for (Row row : resultRows) {
+      Orientation orientation = row.getMolecule().getOrientation();
+      Integer count = orientationCounts.get(orientation);
+      if (count == null) {
+        count = 0;
+      }
+      orientationCounts.put(orientation, ++count);
+    }
+    return orientationCounts;
   }
 
-  public int getLeftCount() {
-    return leftCount;
+  public String getBucketName() {
+    Orientation anOrientation = rows.get(0).getMolecule().getOrientation();
+    if (anOrientation == Orientation.AChiral || anOrientation == Orientation.Symmetric) {
+      return "achiral";
+    }
+    return String.format("l%1$02dr%2$02d", getCountOfOrientation(Orientation.Left), getCountOfOrientation(Orientation.Right));
   }
 
-  public int getRightCount() {
-    return rows.size() - leftCount;
+  private int getCountOfOrientation(Orientation orientation) {
+    Integer count = orientationCounts.get(orientation);
+    return count == null ? 0 : count;
   }
 
   public List<Row> getRows() {
     return Collections.unmodifiableList(rows);
   }
 
-  public String toJson() {
-    // todo
-    return "{}";
+  public String toJson(Crystal crystal, Molecule molecule) {
+    Result result = new Result();
+    result.setMolecule(molecule.getName());
+    result.setPlacements(new ArrayList<>());
+    for (Row row : rows) {
+      result.getPlacements().add(buildPlacement(crystal, molecule, row));
+    }
+    // todo add stuff for adjacencies
+    return gson.toJson(result);
+  }
+
+  private Placement buildPlacement(Crystal crystal, Molecule molecule, Row row) {
+    Placement placement = new Placement();
+    placement.setOrientation(molecule.getOrientation().name());
+    placement.setBeads(new ArrayList<>());
+    // todo beads
+    return placement;
   }
 
 }

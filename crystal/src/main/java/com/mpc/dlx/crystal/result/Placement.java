@@ -4,17 +4,8 @@ import java.util.List;
 
 public class Placement {
 
-  private String molecule;
   private String orientation;
   private List<Bead> beads;
-
-  public String getMolecule() {
-    return molecule;
-  }
-
-  public void setMolecule(String molecule) {
-    this.molecule = molecule;
-  }
 
   public String getOrientation() {
     return orientation;

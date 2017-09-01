@@ -4,8 +4,17 @@ import java.util.List;
 
 public class Result {
 
+  private String molecule;
   private List<Placement> placements;
   private List<Adjacency> adjacencies;
+
+  public String getMolecule() {
+    return molecule;
+  }
+
+  public void setMolecule(String molecule) {
+    this.molecule = molecule;
+  }
 
   public List<Placement> getPlacements() {
     return placements;

@@ -1,8 +1,11 @@
 package com.mpc.dlx.crystal;
 
+import com.mpc.dlx.crystal.result.Coordinate;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -10,10 +13,12 @@ import java.util.stream.Collectors;
 public class Crystal {
 
   private static final String NEIGHBORS_FILENAME = "neighbors.txt";
+  private static final String COORDINATES_FILENAME = "replicated_coordinates.txt";
 
   private final String name;
   private final String baseDir;
   private final Map<Integer, Node> nodes = new HashMap<>();
+  private final Map<Integer, List<Coordinate>> coordinates;
   // todo stuff for "holes" -- use "remainder". When > 0 then first hole goes at origin. Other holes float as one node molecules
 
   public Crystal(String baseDir) {
@@ -38,6 +43,7 @@ public class Crystal {
           node.set(nodes.get(connectingNode), direction);
         }
       }
+      this.coordinates = readInCoordinates(this.baseDir);
       // todo kludge. for now, just remove the 0th node
       removeNode(0);
       checkLinksBackAndForth();
@@ -50,9 +56,9 @@ public class Crystal {
 
   private static String nameFromBaseDir(String baseDir) {
     if (baseDir.endsWith("/")) {
-      baseDir = baseDir.substring(0, baseDir.lastIndexOf("/"));
+      baseDir = baseDir.substring(0, baseDir.lastIndexOf('/'));
     }
-    return "c" + baseDir.substring(baseDir.lastIndexOf("/") + 1);
+    return "c" + baseDir.substring(baseDir.lastIndexOf('/') + 1);
   }
 
   private void removeNode(int nodeId) {
@@ -155,6 +161,24 @@ public class Crystal {
     }
   }
 
+  private Map<Integer, List<Coordinate>> readInCoordinates(String baseDir) throws IOException {
+    Map<Integer, List<Coordinate>> coordinates = new HashMap<>();
+    String line;
+    try (BufferedReader reader = new BufferedReader(new FileReader(baseDir + COORDINATES_FILENAME))) {
+      while ((line = reader.readLine()) != null) {
+        String[] parts = line.split("\t");
+        if (parts.length < 4) {
+          continue;
+        }
+        int nodeId = Integer.parseInt(parts[0]);
+        Coordinate coordinate = new Coordinate(parts[1], parts[2], parts[3]);
+        List<Coordinate> nodeCoordinates = coordinates.computeIfAbsent(nodeId, k -> new ArrayList<>());
+        nodeCoordinates.add(coordinate);
+      }
+    }
+    return coordinates;
+  }
+
   public Node getNode(int nodeId) {
     return nodes.get(nodeId);
   }
@@ -183,8 +207,12 @@ public class Crystal {
     return name;
   }
 
+  public List<Coordinate> getCoordinates(int nodeId) {
+    return coordinates.get(nodeId);
+  }
+
   public static void main(String[] args) {
-    Crystal crystal = new Crystal("/Users/merlin/Downloads/textfiles/1372/");
+    Crystal crystal = new Crystal("/Users/carpentermp/Downloads/textfiles/1372/");
     System.out.println("Crystal: " + crystal.getName());
   }
 
