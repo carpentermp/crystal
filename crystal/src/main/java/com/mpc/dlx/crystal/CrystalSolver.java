@@ -135,7 +135,7 @@ public class CrystalSolver {
     File bucketDir = Utils.createSubDir(moleculeDir.getAbsolutePath(), bucketName);
     int count = 0;
     for (CrystalResult result : results) {
-      String json = result.toJson(crystal, rootMolecule);
+      String json = result.toJson();
       String filename = Utils.addTrailingSlash(bucketDir.getAbsolutePath()) + crystal.getName() + "_" + rootMolecule.getName() + "_" + bucketName + "_" + String.format("%04d", count++) + ".json";
       try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
         writer.write(json);
@@ -147,7 +147,7 @@ public class CrystalSolver {
 
     public boolean processResult(DLXResult dlxResult) {
       count++;
-      CrystalResult result = new CrystalResult(dlxResult, rows);
+      CrystalResult result = new CrystalResult(dlxResult, crystal, rootMolecule, rows);
       List<CrystalResult> results = resultMap.computeIfAbsent(result.getBucketName(), k -> new ArrayList<>());
       results.add(result);
       return true; // keep going

@@ -14,11 +14,17 @@ public class CrystalResult {
   private static final Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
   private final Map<Orientation, Integer> orientationCounts;
+  private final Crystal crystal;
+  private final Molecule rootMolecule;
   private final List<Row> rows;
+  private final Map<Node, Integer> nodeToBeadIdMap;
 
-  public CrystalResult(DLXResult dlxResult, List<Row> allRows) {
+  public CrystalResult(DLXResult dlxResult, Crystal crystal, Molecule rootMolecule, List<Row> allRows) {
     this.rows = convertResultToRows(dlxResult, allRows);
+    this.crystal = crystal;
+    this.rootMolecule = rootMolecule;
     this.orientationCounts = countOrientations(rows);
+    this.nodeToBeadIdMap = buildNodeToBeadMap();
   }
 
   private List<Row> convertResultToRows(DLXResult result, List<Row> allRows) {
@@ -70,10 +76,10 @@ public class CrystalResult {
     return count == null ? 0 : count;
   }
 
-  public String toJson(Crystal crystal, Molecule molecule) {
+  public String toJson() {
     Result result = new Result();
     result.setCrystal(crystal.getName());
-    result.setMolecule(molecule.getName());
+    result.setMolecule(rootMolecule.getName());
     result.setPlacements(new ArrayList<>());
     for (Row row : rows) {
       if (row.isHole()) {
@@ -81,11 +87,11 @@ public class CrystalResult {
       }
       result.getPlacements().add(buildPlacement(crystal, row));
     }
-    result.setAdjacencies(buildAdjacencies(buildNodeToBeadMap(crystal)));
+    result.setAdjacencies(buildAdjacencies());
     return gson.toJson(result);
   }
 
-  private List<Adjacency> buildAdjacencies(Map<Node, Integer> nodeToBeadIdMap) {
+  private List<Adjacency> buildAdjacencies() {
     Map<String, Integer> adjacencyCounts = new HashMap<>();
     for (Node node : nodeToBeadIdMap.keySet()) {
       for (int i = 0; i < 6; i++) {
@@ -167,10 +173,9 @@ public class CrystalResult {
 
   /**
    * build a map of node to the bead at that node
-   * @param crystal the crystal
    * @return map of node to the bead at that node
    */
-  private Map<Node, Integer> buildNodeToBeadMap(Crystal crystal) {
+  private Map<Node, Integer> buildNodeToBeadMap() {
     Map<Node, Integer> nodeToBeadIdMap = new HashMap<>();
     for (Row row : rows) {
       if (row.isHole()) {
