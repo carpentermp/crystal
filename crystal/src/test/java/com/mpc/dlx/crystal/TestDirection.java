@@ -16,6 +16,7 @@ public class TestDirection {
     assertEquals(Direction.DownLeft, rotatedMoves[3]);
     assertEquals(Direction.Left, rotatedMoves[4]);
     assertEquals(Direction.UpLeft, rotatedMoves[5]);
+    assertEquals(Direction.Back, Direction.Back.rotate());
   }
 
   @Test

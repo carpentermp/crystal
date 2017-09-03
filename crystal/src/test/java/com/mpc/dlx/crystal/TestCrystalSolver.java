@@ -13,7 +13,7 @@ public class TestCrystalSolver {
 
   @Before
   public void setUp() {
-    solver = new CrystalSolver(Molecule.m05, new Crystal(Utils.getResourceDirectory("neighbors.txt")));
+    solver = new CrystalSolver(Molecule.m05, new Crystal(Utils.getResourceFilename("1372")));
   }
 
   @Test

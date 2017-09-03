@@ -11,15 +11,17 @@ import static org.junit.Assert.*;
 public class TestRow {
 
   private Molecule molecule;
-  private Crystal crystal;
+  private Crystal c1372;
+  private Crystal c59;
   private Set<Integer> usedIds;
   private Row row;
 
   @Before
   public void setUp() {
     molecule = new Molecule("M00", Direction.DownRight, Direction.Right, Direction.Right, Direction.UpLeft, Direction.DownLeft);
-    crystal = new Crystal(Utils.getResourceDirectory("neighbors.txt"));
-    usedIds = molecule.getUsedNodeIds(crystal.getNode(2820));
+    c1372 = new Crystal(Utils.getResourceFilename("1372"));
+    c59 = new Crystal(Utils.getResourceFilename("59"));
+    usedIds = molecule.getUsedNodeIds(c1372.getNode(2820));
     row = new Row(2820, molecule, usedIds);
   }
 
@@ -32,11 +34,32 @@ public class TestRow {
     assertTrue(usedIds.contains(1301));
     assertTrue(usedIds.contains(1301));
     assertTrue(usedIds.contains(2622));
+    assertFalse(row.isHole());
+  }
+
+  @Test
+  public void testHoleRow() throws Exception {
+    Row holeRow1 = new Row(2421, 0);
+    Row holeRow2 = new Row(2421, 1);
+    assertTrue(holeRow1.isHole());
+    assertTrue(holeRow2.isHole());
+    String[] columnNames = CrystalSolver.buildColumnNames(c59);
+    byte[] hole1Bytes = holeRow1.getBytes(columnNames);
+    byte[] hole2Bytes = holeRow2.getBytes(columnNames);
+    assertEquals(1, hole1Bytes[0]);
+    assertEquals(0, hole1Bytes[1]);
+    assertEquals(1, hole1Bytes[2]);
+    assertEquals(0, hole1Bytes[3]);
+    assertEquals(0, hole2Bytes[0]);
+    assertEquals(1, hole2Bytes[1]);
+    assertEquals(1, hole2Bytes[2]);
+    assertEquals(0, hole2Bytes[3]);
   }
 
   @Test
   public void testBytes() {
-    byte[] bytes = row.getBytes(crystal.getSortedNodeNames());
+    String[] columnNames = CrystalSolver.buildColumnNames(c1372);
+    byte[] bytes = row.getBytes(columnNames);
     assertEquals(1, bytes[6]);
     assertEquals(1, bytes[20]);
     assertEquals(1, bytes[22]);

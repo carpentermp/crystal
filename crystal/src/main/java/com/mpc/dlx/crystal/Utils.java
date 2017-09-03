@@ -1,7 +1,6 @@
 package com.mpc.dlx.crystal;
 
 import java.io.File;
-import java.io.IOException;
 
 @SuppressWarnings({"WeakerAccess", "ConstantConditions", "SameParameterValue"})
 public class Utils {
@@ -11,11 +10,6 @@ public class Utils {
 
   public static String getResourceFilename(String pathToResource) {
     return Utils.class.getClassLoader().getResource(pathToResource).getFile();
-  }
-
-  public static String getResourceDirectory(String pathToResource) {
-    String resourceFilename = getResourceFilename(pathToResource);
-    return resourceFilename.substring(0, resourceFilename.lastIndexOf('/') + 1);
   }
 
   public static File createSubDir(String baseDir, String subDirName) {

@@ -28,6 +28,7 @@ public class CrystalResult {
       List<Integer> usedIds = it.next()
           .stream()
           .map(String::valueOf)
+          .filter(s -> Character.isDigit(s.charAt(0)))
           .map(Integer::parseInt)
           .collect(Collectors.toList());
       resultRows.add(findRow(usedIds, allRows));
@@ -56,15 +57,12 @@ public class CrystalResult {
   }
 
   public String getBucketName() {
-    Orientation anOrientation = rows.stream()
-      .filter(r -> r.getMolecule().getOrientation() == Orientation.Left || r.getMolecule().getOrientation() == Orientation.Right)
-      .findAny()
-      .map(r -> r.getMolecule().getOrientation())
-      .orElse(null);
-    if (anOrientation == null) {
+    int leftCount = getCountOfOrientation(Orientation.Left);
+    int rightCount = getCountOfOrientation(Orientation.Right);
+    if (leftCount + rightCount == 0) {
       return "all";
     }
-    return String.format("l%1$02dr%2$02d", getCountOfOrientation(Orientation.Left), getCountOfOrientation(Orientation.Right));
+    return String.format("l%1$02dr%2$02d", leftCount, rightCount);
   }
 
   private int getCountOfOrientation(Orientation orientation) {
@@ -72,20 +70,18 @@ public class CrystalResult {
     return count == null ? 0 : count;
   }
 
-  public List<Row> getRows() {
-    return Collections.unmodifiableList(rows);
-  }
-
   public String toJson(Crystal crystal, Molecule molecule) {
     Result result = new Result();
     result.setCrystal(crystal.getName());
     result.setMolecule(molecule.getName());
     result.setPlacements(new ArrayList<>());
-    Map<Node, Integer> nodeToBeadIdMap = new HashMap<>();
     for (Row row : rows) {
-      result.getPlacements().add(buildPlacement(crystal, row, nodeToBeadIdMap));
+      if (row.isHole()) {
+        continue;
+      }
+      result.getPlacements().add(buildPlacement(crystal, row));
     }
-    result.setAdjacencies(buildAdjacencies(nodeToBeadIdMap));
+    result.setAdjacencies(buildAdjacencies(buildNodeToBeadMap(crystal)));
     return gson.toJson(result);
   }
 
@@ -118,7 +114,10 @@ public class CrystalResult {
     addAdjacency(nodeToBeadIdMap.get(node), nodeToBeadIdMap.get(otherNode), adjacencyCounts);
   }
 
-  private void addAdjacency(int beadId1, int beadId2, Map<String, Integer> adjacencyCounts) {
+  private void addAdjacency(int beadId1, Integer beadId2, Map<String, Integer> adjacencyCounts) {
+    if (beadId2 == null) {
+      return;
+    }
     String name = buildAdjacencyName(beadId1, beadId2);
     Integer count = adjacencyCounts.get(name);
     if (count == null) {
@@ -136,10 +135,10 @@ public class CrystalResult {
     return beadId1 + "-" + beadId2;
   }
 
-  private Placement buildPlacement(Crystal crystal, Row row, Map<Node, Integer> nodeToBeadIdMap) {
+  private Placement buildPlacement(Crystal crystal, Row row) {
     Placement placement = new Placement();
     placement.setOrientation(row.getMolecule().getOrientation().name());
-    placement.setBeads(buildBeads(crystal, row, nodeToBeadIdMap));
+    placement.setBeads(buildBeads(crystal, row));
     return placement;
   }
 
@@ -147,10 +146,9 @@ public class CrystalResult {
    * builds the beads for a given molecule placement
    * @param crystal the crystal
    * @param row the result row
-   * @param nodeToBeadIdMap a map of nodes to the beadIds at that node (built as a side-effect of calls to this function)
    * @return the list of beads for given molecule placement
    */
-  private List<Bead> buildBeads(Crystal crystal, Row row, Map<Node, Integer> nodeToBeadIdMap) {
+  private List<Bead> buildBeads(Crystal crystal, Row row) {
     List<Bead> beads = new ArrayList<>();
     Molecule molecule = row.getMolecule();
     int nodeId = row.getNodeId();
@@ -158,7 +156,6 @@ public class CrystalResult {
     for (int i = 0; i < molecule.size(); i++) {
       int beadId = i + 1;
       Node beadNode = molecule.getBeadNode(startingNode, beadId);
-      nodeToBeadIdMap.put(beadNode, beadId);
       Bead bead = new Bead();
       bead.setId(beadId + (molecule.getOrientation() == Orientation.Right ? 5 : 0));
       bead.setSiteId(beadNode.getId());
@@ -166,6 +163,28 @@ public class CrystalResult {
       beads.add(bead);
     }
     return beads;
+  }
+
+  /**
+   * build a map of node to the bead at that node
+   * @param crystal the crystal
+   * @return map of node to the bead at that node
+   */
+  private Map<Node, Integer> buildNodeToBeadMap(Crystal crystal) {
+    Map<Node, Integer> nodeToBeadIdMap = new HashMap<>();
+    for (Row row : rows) {
+      if (row.isHole()) {
+        continue;
+      }
+      Molecule molecule = row.getMolecule();
+      Node startingNode = crystal.getNode(row.getNodeId());
+      for (int i = 0; i < molecule.size(); i++) {
+        int beadId = i + 1;
+        Node beadNode = molecule.getBeadNode(startingNode, beadId);
+        nodeToBeadIdMap.put(beadNode, beadId);
+      }
+    }
+    return nodeToBeadIdMap;
   }
 
 }

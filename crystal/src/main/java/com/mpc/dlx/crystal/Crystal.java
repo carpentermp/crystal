@@ -18,6 +18,7 @@ public class Crystal {
   private final String name;
   private final Map<Integer, Node> nodes = new HashMap<>();
   private final Map<Integer, List<Coordinate>> coordinates;
+  private int holeCount;
 
   public Crystal(String baseDir) {
     this(baseDir, DEFAULT_MOLECULE_SIZE, nameFromBaseDir(baseDir));
@@ -28,27 +29,15 @@ public class Crystal {
     baseDir = baseDir + (baseDir.endsWith("/") ? "" : "/");
     try {
       Map<Integer, List<String>> connections = readInConnections(baseDir);
-      for (Integer nodeId : connections.keySet()) {
-        nodes.put(nodeId, new Node(nodeId));
-      }
-      for (Map.Entry<Integer, List<String>> entry : connections.entrySet()) {
-        Node node = nodes.get(entry.getKey());
-        List<String> nodeConnections = entry.getValue();
-        for (String line : nodeConnections) {
-          String[] parts = line.split(" ");
-          Direction direction = Direction.fromValue(Integer.parseInt(parts[1]));
-          Integer connectingNode = Integer.parseInt(parts[2]);
-          node.set(nodes.get(connectingNode), direction);
-        }
-      }
+      createNodes(connections);
       int holeCount = nodes.size() % moleculeSize;
       if (holeCount != 0) {
         removeNode(0);
         holeCount--;
-        if (holeCount > 0) {
-          // todo temp for now choke on holes
-          throw new IllegalArgumentException("Unit cell with multiple holes not supported yet. Min # of holes in this crystal: " + (holeCount + 1));
-        }
+//        if (holeCount > 1) {
+//          throw new IllegalArgumentException("Unit cell with this many holes not supported yet. Min # of holes in this crystal: " + (holeCount + 1));
+//        }
+        this.holeCount = holeCount;
       }
       this.coordinates = readInCoordinates(baseDir);
       checkLinksBackAndForth();
@@ -58,7 +47,23 @@ public class Crystal {
     }
   }
 
-  private static String nameFromBaseDir(String baseDir) {
+  private void createNodes(Map<Integer, List<String>> connections) {
+    for (Integer nodeId : connections.keySet()) {
+      nodes.put(nodeId, new Node(nodeId));
+    }
+    for (Map.Entry<Integer, List<String>> entry : connections.entrySet()) {
+      Node node = nodes.get(entry.getKey());
+      List<String> nodeConnections = entry.getValue();
+      for (String line : nodeConnections) {
+        String[] parts = line.split(" ");
+        Direction direction = Direction.fromValue(Integer.parseInt(parts[1]));
+        Integer connectingNode = Integer.parseInt(parts[2]);
+        node.set(nodes.get(connectingNode), direction);
+      }
+    }
+  }
+
+  static String nameFromBaseDir(String baseDir) {
     if (baseDir.endsWith("/")) {
       baseDir = baseDir.substring(0, baseDir.lastIndexOf('/'));
     }
@@ -151,16 +156,19 @@ public class Crystal {
     return Collections.unmodifiableSet(nodes.keySet());
   }
 
-  public String[] getSortedNodeNames() {
+  public List<String> getSortedNodeNames() {
     return getNodeIds().stream()
         .map(id -> Integer.toString(id))
         .sorted()
-        .collect(Collectors.toList())
-        .toArray(new String[size()]);
+        .collect(Collectors.toList());
   }
 
   public String getName() {
     return name;
+  }
+
+  public int getHoleCount() {
+    return holeCount;
   }
 
   public List<Coordinate> getCoordinates(int nodeId) {

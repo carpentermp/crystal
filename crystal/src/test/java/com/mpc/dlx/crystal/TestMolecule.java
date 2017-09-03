@@ -13,12 +13,18 @@ public class TestMolecule {
 
   private Molecule molecule;
   private Molecule mirrored;
-  private Crystal crystal = new Crystal(Utils.getResourceDirectory("neighbors.txt"));
+  private Crystal c1372 = new Crystal(Utils.getResourceFilename("1372"));
 
   @Before
   public void setUp() {
     molecule = Molecule.m05;
     mirrored = molecule.mirror(Direction.Left);
+  }
+
+  @Test
+  public void testGetters() {
+    assertEquals("m05", Molecule.m05.getName());
+    assertEquals(5, molecule.size());
   }
 
   @Test
@@ -28,6 +34,11 @@ public class TestMolecule {
     assertEquals(Direction.DownRight, mirroredDirections.get(1));
     assertEquals(Direction.Right, mirroredDirections.get(2));
     assertEquals(Direction.UpRight, mirroredDirections.get(3));
+    assertEquals(molecule.getBeadIds()[0], mirrored.getBeadIds()[0]);
+    assertEquals(molecule.getBeadIds()[1], mirrored.getBeadIds()[1]);
+    assertEquals(molecule.getBeadIds()[2], mirrored.getBeadIds()[2]);
+    assertEquals(molecule.getBeadIds()[3], mirrored.getBeadIds()[3]);
+    assertEquals(molecule.getBeadIds()[4], mirrored.getBeadIds()[4]);
   }
 
   @Test
@@ -38,11 +49,16 @@ public class TestMolecule {
     assertEquals(Direction.Right, rotatedDirections.get(1));
     assertEquals(Direction.DownRight, rotatedDirections.get(2));
     assertEquals(Direction.DownLeft, rotatedDirections.get(3));
+    assertEquals(molecule.getBeadIds()[0], rotated.getBeadIds()[0]);
+    assertEquals(molecule.getBeadIds()[1], rotated.getBeadIds()[1]);
+    assertEquals(molecule.getBeadIds()[2], rotated.getBeadIds()[2]);
+    assertEquals(molecule.getBeadIds()[3], rotated.getBeadIds()[3]);
+    assertEquals(molecule.getBeadIds()[4], rotated.getBeadIds()[4]);
   }
 
   @Test
   public void testGetUsedNodeIds() {
-    Node startingNode = crystal.getNode(2820);
+    Node startingNode = c1372.getNode(2820);
     Set<Integer> usedNodeIds = molecule.getUsedNodeIds(startingNode);
     assertUsedNodeIds(usedNodeIds, 2820, 2582, 1063, 1261, 2622);
     usedNodeIds = Molecule.m19.getUsedNodeIds(startingNode);
@@ -51,7 +67,7 @@ public class TestMolecule {
 
   @Test
   public void testGetBeadNode() {
-    Node startingNode = crystal.getNode(2820);
+    Node startingNode = c1372.getNode(2820);
 
     assertEquals(2820, Molecule.m22.getBeadNode(startingNode, 1).getId());
     assertEquals(2582, Molecule.m22.getBeadNode(startingNode, 2).getId());
@@ -64,6 +80,14 @@ public class TestMolecule {
     assertEquals(2622, Molecule.m19.getBeadNode(startingNode, 3).getId());
     assertEquals(1063, Molecule.m19.getBeadNode(startingNode, 4).getId());
     assertEquals(1062, Molecule.m19.getBeadNode(startingNode, 5).getId());
+
+    try {
+      Molecule.m19.getBeadNode(startingNode, 6).getId();
+      fail("Should have failed getting bead node 6");
+    }
+    catch (IllegalArgumentException e) {
+      // expected
+    }
   }
 
   @Test
@@ -87,7 +111,8 @@ public class TestMolecule {
     assertEquals(m1, m2);
     assertNotEquals(m1, m3);
     assertFalse(m1.equals(null));
-    assertFalse(m1.equals(crystal));
+    assertFalse(m1.equals(c1372));
+    assertNotEquals(molecule, mirrored);
   }
 
   @Test

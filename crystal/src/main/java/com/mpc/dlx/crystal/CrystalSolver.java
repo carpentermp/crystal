@@ -14,6 +14,8 @@ import java.util.*;
 @SuppressWarnings({"WeakerAccess", "squid:S106", "squid:HiddenFieldCheck"})
 public class CrystalSolver {
 
+  private static final String HOLES_PREFIX = "h";
+
   private final Molecule rootMolecule;
   private final Crystal crystal;
   final String[] columnNames;
@@ -26,10 +28,20 @@ public class CrystalSolver {
   public CrystalSolver(Molecule molecule, Crystal crystal) {
     rootMolecule = molecule;
     this.crystal = crystal;
-    columnNames = crystal.getSortedNodeNames();
+    columnNames = buildColumnNames(crystal);
     molecules = buildMolecules(molecule);
     rows = buildRows(molecules);
     matrix = buildMatrix(rows);
+  }
+
+  static String[] buildColumnNames(Crystal crystal) {
+    List<String> columnNames = crystal.getSortedNodeNames();
+    if (crystal.getHoleCount() > 0) {
+      for (int i = crystal.getHoleCount() - 1; i >= 0; i--) {
+        columnNames.add(0, HOLES_PREFIX + i);
+      }
+    }
+    return columnNames.toArray(new String[columnNames.size()]);
   }
 
   private List<Molecule> buildMolecules(Molecule molecule) {
@@ -56,8 +68,17 @@ public class CrystalSolver {
   private List<Row> buildRows(List<Molecule> molecules) {
     List<Row> rows = new ArrayList<>();
     for (String columnName : columnNames) {
+      if (columnName.startsWith(HOLES_PREFIX)) {
+        continue;
+      }
+      int nodeId = Integer.parseInt(columnName);
       for (Molecule m : molecules) {
-        safeAddRow(rows, buildRow(Integer.parseInt(columnName), m));
+        safeAddRow(rows, buildRow(nodeId, m));
+      }
+      if (crystal.getHoleCount() > 0) {
+        for (int i = 0; i < crystal.getHoleCount(); i++) {
+          rows.add(new Row(nodeId, i));
+        }
       }
     }
     return rows;
@@ -145,11 +166,12 @@ public class CrystalSolver {
           m = molecule;
           new CrystalSolver(molecule, crystal).solve();
         }
+//        m = Molecule.m22;
 //        new CrystalSolver(Molecule.m22, crystal).solve();
       }
       catch (RuntimeException e) {
         System.out.println("Failure solving crystal c" + i + "-" + m.getName() + " because of: " + e.getClass() + ": " + e.getLocalizedMessage());
-        if ("0".equals(e.getLocalizedMessage())) {
+        if (!(e instanceof IllegalArgumentException)) {
           e.printStackTrace();
         }
       }
@@ -161,13 +183,15 @@ public class CrystalSolver {
 //    for (Molecule molecule : Molecule.allMolecules) {
 //      new CrystalSolver(molecule, crystal).solve().output(baseDir);
 //    }
+    new CrystalSolver(Molecule.m05, crystal).solve();
 //    new CrystalSolver(Molecule.m05, crystal).solve().output(baseDir);
-    new CrystalSolver(Molecule.m22, crystal).solve().output(baseDir);
+//    new CrystalSolver(Molecule.m22, crystal).solve().output(baseDir);
   }
 
   public static void main(String[] args) throws IOException {
-//    solveACrystal("/Users/carpentermp/Downloads/textfiles/1372/");
-    solveSeveralCrystals("/Users/carpentermp/Downloads/textfiles/", 1, 300);
+//    solveACrystal("/Users/merlin/Downloads/textfiles/1372/");
+//    solveACrystal("/Users/merlin/Downloads/textfiles/59/");
+    solveSeveralCrystals("/Users/merlin/Downloads/textfiles/", 1, 100);
   }
 
 }

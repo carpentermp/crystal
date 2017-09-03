@@ -25,4 +25,8 @@ public class Adjacency {
     return ++count;
   }
 
+  public String toString() {
+    return name + ": " + count;
+  }
+
 }

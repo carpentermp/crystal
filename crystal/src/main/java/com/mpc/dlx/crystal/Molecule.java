@@ -66,7 +66,7 @@ public class Molecule {
     for (int i = 0; i < rotatedInstructions.length; i++) {
       rotatedInstructions[i] = buildInstructions[i].rotate();
     }
-    return new Molecule(name, orientation, rotatedInstructions);
+    return new Molecule(name, beadIds, orientation, rotatedInstructions);
   }
 
   public Molecule mirror(Direction axis) {
@@ -74,7 +74,7 @@ public class Molecule {
     for (int i = 0; i < mirroredInstructions.length; i++) {
       mirroredInstructions[i] = buildInstructions[i].mirror(axis);
     }
-    return new Molecule(name, orientation.opposite(), mirroredInstructions);
+    return new Molecule(name, beadIds, orientation.opposite(), mirroredInstructions);
   }
 
   public String getName() {
@@ -89,6 +89,10 @@ public class Molecule {
     return Arrays.asList(buildInstructions);
   }
 
+  int[] getBeadIds() {
+    return this.beadIds;
+  }
+
   @SuppressWarnings({"ForLoopReplaceableByForEach", "ConstantConditions"})
   public Node getBeadNode(Node startingNode, int beadId) {
     Node prev = null;
@@ -97,6 +101,9 @@ public class Molecule {
     for (int i = 0; i < beadIds.length; i++) {
       if (beadId == beadIds[i]) {
         return next;
+      }
+      if (directionIndex >= buildInstructions.length) {
+        break;
       }
       Direction nextDirection = buildInstructions[directionIndex++];
       if (nextDirection == Direction.Back) {

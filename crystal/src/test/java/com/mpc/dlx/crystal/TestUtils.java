@@ -8,7 +8,13 @@ public class TestUtils {
 
   @Test
   public void testGetResourceFilename() {
-    assertNotNull(Utils.getResourceDirectory("neighbors.txt"));
+    assertNotNull(Utils.getResourceFilename("1372"));
+  }
+
+  @Test
+  public void testAddTrailingSlash() {
+    assertEquals("abc/", Utils.addTrailingSlash("abc"));
+    assertEquals("abc/", Utils.addTrailingSlash("abc/"));
   }
 
 }
