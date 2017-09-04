@@ -46,6 +46,37 @@ public class CrystalResult {
     return result;
   }
 
+  private Placement buildPlacement(Crystal crystal, Row row) {
+    Placement placement = new Placement();
+    placement.setOrientation(row.getMolecule().getOrientation().name());
+    placement.setBeads(buildBeads(crystal, row));
+    return placement;
+  }
+
+  /**
+   * builds the beads for a given molecule placement
+   *
+   * @param crystal the crystal
+   * @param row     the result row
+   * @return the list of beads for given molecule placement
+   */
+  private List<Bead> buildBeads(Crystal crystal, Row row) {
+    List<Bead> beads = new ArrayList<>();
+    Molecule molecule = row.getMolecule();
+    int nodeId = row.getNodeId();
+    Node startingNode = crystal.getNode(nodeId);
+    for (int i = 0; i < molecule.size(); i++) {
+      int beadId = i + 1;
+      Node beadNode = molecule.getBeadNode(startingNode, beadId);
+      Bead bead = new Bead();
+      bead.setId(beadId + (molecule.getOrientation() == Orientation.Right ? 5 : 0));
+      bead.setSiteId(beadNode.getId());
+      bead.setCoordinates(crystal.getCoordinates(beadNode.getId()));
+      beads.add(bead);
+    }
+    return beads;
+  }
+
   private List<Row> convertResultToRows(DLXResult result, List<Row> allRows) {
     List<Row> resultRows = new ArrayList<>();
     Iterator<List<Object>> it = result.rows();
@@ -102,7 +133,11 @@ public class CrystalResult {
    * @return an ordered list of counts for the adjacencies between different beads
    */
   private List<Integer> computeAdjacencyCounts() {
-    Map<String, Integer> adjacencyCountMap = buildAdjacencyMap();
+    Map<String, Integer> adjacencyCountMap = buildAdjacencyCountMap(crystal, rows);
+    for (Row row : rows) {
+      // subtract the counts for adjacencies within the molecules--they don't count
+      subtractAdjacencies(adjacencyCountMap, buildAdjacencyCountMap(crystal, Collections.singletonList(row)));
+    }
     List<Integer> adjacencyCounts = new ArrayList<>();
     for (int i = 1; i <= rootMolecule.size(); i++) {
       for (int j = i; j <= rootMolecule.size(); j++) {
@@ -110,14 +145,26 @@ public class CrystalResult {
         if (count == null) {
           count = 0;
         }
-        adjacencyCounts.add(count / 2);
+        adjacencyCounts.add(count);
       }
     }
     return adjacencyCounts;
   }
 
-  private Map<String, Integer> buildAdjacencyMap() {
-    Map<Node, Integer> nodeToBeadIdMap = buildNodeToBeadMap();
+  static void subtractAdjacencies(Map<String, Integer> adjacencyCounts, Map<String, Integer> countsToSubtract) {
+    for (Map.Entry<String, Integer> entry : countsToSubtract.entrySet()) {
+      String key = entry.getKey();
+      Integer countToSubtract = entry.getValue();
+      Integer count = adjacencyCounts.get(key);
+      if (count == null) {
+        throw new IllegalArgumentException("Count did not exist!: " + key);
+      }
+      adjacencyCounts.put(key, count - countToSubtract);
+    }
+  }
+
+  static Map<String, Integer> buildAdjacencyCountMap(Crystal crystal, List<Row> rows) {
+    Map<Node, Integer> nodeToBeadIdMap = buildNodeToBeadIdMap(crystal, rows);
     Map<String, Integer> adjacencyMap = new HashMap<>();
     for (Node node : nodeToBeadIdMap.keySet()) {
       for (int i = 1; i <= 6; i++) {
@@ -134,7 +181,7 @@ public class CrystalResult {
     return adjacencyMap;
   }
 
-  private void addAdjacency(Node node, Direction direction, Map<Node, Integer> nodeToBeadIdMap, Map<String, Integer> adjacencyCounts) {
+  private static void addAdjacency(Node node, Direction direction, Map<Node, Integer> nodeToBeadIdMap, Map<String, Integer> adjacencyCounts) {
     Node otherNode = node.get(direction);
     if (otherNode == null) {
       return;
@@ -142,7 +189,7 @@ public class CrystalResult {
     addAdjacency(nodeToBeadIdMap.get(node), nodeToBeadIdMap.get(otherNode), adjacencyCounts);
   }
 
-  private void addAdjacency(int beadId1, Integer beadId2, Map<String, Integer> adjacencyCounts) {
+  private static void addAdjacency(int beadId1, Integer beadId2, Map<String, Integer> adjacencyCounts) {
     if (beadId2 == null) {
       return;
     }
@@ -154,43 +201,12 @@ public class CrystalResult {
     adjacencyCounts.put(name, ++count);
   }
 
-  private Placement buildPlacement(Crystal crystal, Row row) {
-    Placement placement = new Placement();
-    placement.setOrientation(row.getMolecule().getOrientation().name());
-    placement.setBeads(buildBeads(crystal, row));
-    return placement;
-  }
-
-  /**
-   * builds the beads for a given molecule placement
-   *
-   * @param crystal the crystal
-   * @param row     the result row
-   * @return the list of beads for given molecule placement
-   */
-  private List<Bead> buildBeads(Crystal crystal, Row row) {
-    List<Bead> beads = new ArrayList<>();
-    Molecule molecule = row.getMolecule();
-    int nodeId = row.getNodeId();
-    Node startingNode = crystal.getNode(nodeId);
-    for (int i = 0; i < molecule.size(); i++) {
-      int beadId = i + 1;
-      Node beadNode = molecule.getBeadNode(startingNode, beadId);
-      Bead bead = new Bead();
-      bead.setId(beadId + (molecule.getOrientation() == Orientation.Right ? 5 : 0));
-      bead.setSiteId(beadNode.getId());
-      bead.setCoordinates(crystal.getCoordinates(beadNode.getId()));
-      beads.add(bead);
-    }
-    return beads;
-  }
-
   /**
    * build a map of node to the bead at that node
    *
    * @return map of node to the bead at that node
    */
-  private Map<Node, Integer> buildNodeToBeadMap() {
+  static Map<Node, Integer> buildNodeToBeadIdMap(Crystal crystal, List<Row> rows) {
     Map<Node, Integer> nodeToBeadIdMap = new HashMap<>();
     for (Row row : rows) {
       if (row.isHole()) {
