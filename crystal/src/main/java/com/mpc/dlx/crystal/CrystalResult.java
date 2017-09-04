@@ -1,9 +1,9 @@
 package com.mpc.dlx.crystal;
 
 import au.id.bjf.dlx.DLXResult;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.mpc.dlx.crystal.result.*;
+import com.mpc.dlx.crystal.result.Bead;
+import com.mpc.dlx.crystal.result.Placement;
+import com.mpc.dlx.crystal.result.Result;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -11,20 +11,39 @@ import java.util.stream.Collectors;
 @SuppressWarnings({"WeakerAccess", "squid:S1640", "squid:HiddenFieldCheck"})
 public class CrystalResult {
 
-  private static final Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
-
-  private final Map<Orientation, Integer> orientationCounts;
   private final Crystal crystal;
   private final Molecule rootMolecule;
   private final List<Row> rows;
-  private final Map<Node, Integer> nodeToBeadIdMap;
+  private final String bucketName;
+  private final List<Integer> adjacencyCounts;
 
   public CrystalResult(DLXResult dlxResult, Crystal crystal, Molecule rootMolecule, List<Row> allRows) {
-    this.rows = convertResultToRows(dlxResult, allRows);
     this.crystal = crystal;
     this.rootMolecule = rootMolecule;
-    this.orientationCounts = countOrientations(rows);
-    this.nodeToBeadIdMap = buildNodeToBeadMap();
+    this.rows = convertResultToRows(dlxResult, allRows);
+    this.bucketName = buildBucketName();
+    this.adjacencyCounts = computeAdjacencyCounts();
+  }
+
+  public String getBucketName() {
+    return this.bucketName;
+  }
+
+  public Result toResultBean() {
+    Result result = new Result();
+    result.setCrystal(crystal.getName());
+    result.setMolecule(rootMolecule.getName());
+    result.setPlacements(new ArrayList<>());
+    result.setAdjacencyOrder(computeAdjacencyOrder(rootMolecule));
+    for (Row row : rows) {
+      if (row.isHole()) {
+        continue;
+      }
+      result.getPlacements().add(buildPlacement(crystal, row));
+    }
+    result.setAdjacencyOrder(computeAdjacencyOrder(rootMolecule));
+    result.setAdjacencyCounts(this.adjacencyCounts);
+    return result;
   }
 
   private List<Row> convertResultToRows(DLXResult result, List<Row> allRows) {
@@ -49,6 +68,16 @@ public class CrystalResult {
         .orElse(null);
   }
 
+  private String buildBucketName() {
+    Map<Orientation, Integer> orientationCounts = countOrientations(rows);
+    int leftCount = getCountOfOrientation(orientationCounts, Orientation.Left);
+    int rightCount = getCountOfOrientation(orientationCounts, Orientation.Right);
+    if (leftCount + rightCount == 0) {
+      return "all";
+    }
+    return String.format("l%1$02dr%2$02d", leftCount, rightCount);
+  }
+
   private Map<Orientation, Integer> countOrientations(List<Row> resultRows) {
     Map<Orientation, Integer> orientationCounts = new HashMap<>();
     for (Row row : resultRows) {
@@ -62,54 +91,47 @@ public class CrystalResult {
     return orientationCounts;
   }
 
-  public String getBucketName() {
-    int leftCount = getCountOfOrientation(Orientation.Left);
-    int rightCount = getCountOfOrientation(Orientation.Right);
-    if (leftCount + rightCount == 0) {
-      return "all";
-    }
-    return String.format("l%1$02dr%2$02d", leftCount, rightCount);
-  }
-
-  private int getCountOfOrientation(Orientation orientation) {
+  private int getCountOfOrientation(Map<Orientation, Integer> orientationCounts, Orientation orientation) {
     Integer count = orientationCounts.get(orientation);
     return count == null ? 0 : count;
   }
 
-  public String toJson() {
-    Result result = new Result();
-    result.setCrystal(crystal.getName());
-    result.setMolecule(rootMolecule.getName());
-    result.setPlacements(new ArrayList<>());
-    for (Row row : rows) {
-      if (row.isHole()) {
-        continue;
+  /**
+   * gets an ordered list of counts for the adjacencies between different beads
+   *
+   * @return an ordered list of counts for the adjacencies between different beads
+   */
+  private List<Integer> computeAdjacencyCounts() {
+    Map<String, Integer> adjacencyCountMap = buildAdjacencyMap();
+    List<Integer> adjacencyCounts = new ArrayList<>();
+    for (int i = 1; i <= rootMolecule.size(); i++) {
+      for (int j = i; j <= rootMolecule.size(); j++) {
+        Integer count = adjacencyCountMap.get(buildAdjacencyName(i, j));
+        if (count == null) {
+          count = 0;
+        }
+        adjacencyCounts.add(count / 2);
       }
-      result.getPlacements().add(buildPlacement(crystal, row));
     }
-    result.setAdjacencies(buildAdjacencies());
-    return gson.toJson(result);
+    return adjacencyCounts;
   }
 
-  private List<Adjacency> buildAdjacencies() {
-    Map<String, Integer> adjacencyCounts = new HashMap<>();
+  private Map<String, Integer> buildAdjacencyMap() {
+    Map<Node, Integer> nodeToBeadIdMap = buildNodeToBeadMap();
+    Map<String, Integer> adjacencyMap = new HashMap<>();
     for (Node node : nodeToBeadIdMap.keySet()) {
-      for (int i = 0; i < 6; i++) {
-        addAdjacency(node, Direction.fromValue(i + 1), nodeToBeadIdMap, adjacencyCounts);
+      for (int i = 1; i <= 6; i++) {
+        addAdjacency(node, Direction.fromValue(i), nodeToBeadIdMap, adjacencyMap);
       }
     }
-    List<Adjacency> rtn = new ArrayList<>();
-    for (Map.Entry<String, Integer> entry : adjacencyCounts.entrySet()) {
-      Adjacency adjacency = new Adjacency();
-      adjacency.setName(entry.getKey());
-      adjacency.setCount(entry.getValue() / 2);
-      rtn.add(adjacency);
-      if ((entry.getValue() & 1) != 0) {
+    for (String adjacencyName : adjacencyMap.keySet()) {
+      int counts = adjacencyMap.get(adjacencyName);
+      if ((counts & 1) != 0) {
         throw new IllegalStateException("Adjacency count was odd!");
       }
+      adjacencyMap.put(adjacencyName, counts / 2);
     }
-    rtn.sort(Comparator.comparing(Adjacency::getName));
-    return rtn;
+    return adjacencyMap;
   }
 
   private void addAdjacency(Node node, Direction direction, Map<Node, Integer> nodeToBeadIdMap, Map<String, Integer> adjacencyCounts) {
@@ -132,15 +154,6 @@ public class CrystalResult {
     adjacencyCounts.put(name, ++count);
   }
 
-  private String buildAdjacencyName(int beadId1, int beadId2) {
-    if (beadId1 > beadId2) {
-      int temp = beadId1;
-      beadId1 = beadId2;
-      beadId2 = temp;
-    }
-    return beadId1 + "-" + beadId2;
-  }
-
   private Placement buildPlacement(Crystal crystal, Row row) {
     Placement placement = new Placement();
     placement.setOrientation(row.getMolecule().getOrientation().name());
@@ -150,8 +163,9 @@ public class CrystalResult {
 
   /**
    * builds the beads for a given molecule placement
+   *
    * @param crystal the crystal
-   * @param row the result row
+   * @param row     the result row
    * @return the list of beads for given molecule placement
    */
   private List<Bead> buildBeads(Crystal crystal, Row row) {
@@ -173,6 +187,7 @@ public class CrystalResult {
 
   /**
    * build a map of node to the bead at that node
+   *
    * @return map of node to the bead at that node
    */
   private Map<Node, Integer> buildNodeToBeadMap() {
@@ -190,6 +205,31 @@ public class CrystalResult {
       }
     }
     return nodeToBeadIdMap;
+  }
+
+  static List<String> computeAdjacencyOrder(Molecule molecule) {
+    List<String> rtn = new ArrayList<>();
+    int size = molecule.size();
+    for (int i = 1; i <= size; i++) {
+      for (int j = i; j <= size; j++) {
+        rtn.add(buildAdjacencyName(i, j));
+      }
+    }
+    return rtn;
+  }
+
+  static String buildAdjacencyName(int beadId1, int beadId2) {
+    if (beadId1 > beadId2) {
+      int temp = beadId1;
+      beadId1 = beadId2;
+      beadId2 = temp;
+    }
+    return beadId1 + "-" + beadId2;
+  }
+
+  // todo temp
+  public String getInteractionValues() {
+    return Utils.join(adjacencyCounts, ", ");
   }
 
 }

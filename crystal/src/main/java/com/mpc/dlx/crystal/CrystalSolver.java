@@ -4,6 +4,9 @@ import au.id.bjf.dlx.DLX;
 import au.id.bjf.dlx.DLXResult;
 import au.id.bjf.dlx.DLXResultProcessor;
 import au.id.bjf.dlx.data.ColumnObject;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.mpc.dlx.crystal.result.Result;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -15,6 +18,7 @@ import java.util.*;
 public class CrystalSolver {
 
   private static final String HOLES_PREFIX = "h";
+  private static final Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
   private final Molecule rootMolecule;
   private final Crystal crystal;
@@ -135,12 +139,71 @@ public class CrystalSolver {
     File bucketDir = Utils.createSubDir(moleculeDir.getAbsolutePath(), bucketName);
     int count = 0;
     for (CrystalResult result : results) {
-      String json = result.toJson();
+      Result resultBean = result.toResultBean();
+      String json = gson.toJson(resultBean);
       String filename = Utils.addTrailingSlash(bucketDir.getAbsolutePath()) + crystal.getName() + "_" + rootMolecule.getName() + "_" + bucketName + "_" + String.format("%04d", count++) + ".json";
       try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
         writer.write(json);
       }
     }
+  }
+
+  private CrystalSolver deDuplicate() {
+    for (Map.Entry<String, List<CrystalResult>> entry : resultMap.entrySet()) {
+      String bucketName = entry.getKey();
+      deDuplicateBucket(bucketName);
+    }
+    return this;
+  }
+
+  private void deDuplicateBucket(String bucketName) {
+    List<CrystalResult> allResults = resultMap.get(bucketName);
+    Map<CrystalResult, Integer> resultsWeHaveSeen = new HashMap<>();
+    for (int i = 0; i < allResults.size(); i++) {
+      CrystalResult result = allResults.get(i);
+      CrystalResult matchingResult = findMatchingResult(resultsWeHaveSeen.keySet(), result);
+      if (matchingResult == null) {
+        resultsWeHaveSeen.put(result, i);
+      }
+//      else {
+//        System.out.println("Duplicate result: " + i + " - " + resultsWeHaveSeen.get(matchingResult) + ", Interaction values: " + result.getInteractionValues());
+//      }
+    }
+    if (allResults.size() != resultsWeHaveSeen.size()) {
+      System.out.println(bucketName + " went from: " + allResults.size() + " to " + resultsWeHaveSeen.size());
+      resultMap.put(bucketName, new ArrayList<>(resultsWeHaveSeen.keySet()));
+    }
+  }
+
+  private CrystalSolver checkForDuplicates() {
+    String bucketName = "l06r06";
+    List<CrystalResult> allResults = resultMap.get(bucketName);
+    int dupCount = 0;
+    Map<CrystalResult, Integer> resultsWeHaveSeen = new HashMap<>();
+    for (int i = 0; i < allResults.size(); i++) {
+      CrystalResult result = allResults.get(i);
+      CrystalResult matchingResult = findMatchingResult(resultsWeHaveSeen.keySet(), result);
+      if (matchingResult == null) {
+        resultsWeHaveSeen.put(result, i);
+      }
+      else {
+        System.out.println("Duplicate result: " + i + " - " + resultsWeHaveSeen.get(matchingResult) + ", Interaction values: " + result.getInteractionValues());
+        dupCount++;
+      }
+    }
+    System.out.println("Duplicate count: " + dupCount);
+    System.out.println("Count of uniques: " + resultsWeHaveSeen.size());
+    return this;
+  }
+
+  private CrystalResult findMatchingResult(Set<CrystalResult> resultsWeHaveSeen, CrystalResult resultToFind) {
+    String interactionValues = resultToFind.getInteractionValues();
+    for (CrystalResult resultWeHaveSeen : resultsWeHaveSeen) {
+      if (resultWeHaveSeen.getInteractionValues().equals(interactionValues)) {
+        return resultWeHaveSeen;
+      }
+    }
+    return null;
   }
 
   public class CrystalResultProcessor implements DLXResultProcessor {
@@ -183,15 +246,18 @@ public class CrystalSolver {
 //    for (Molecule molecule : Molecule.allMolecules) {
 //      new CrystalSolver(molecule, crystal).solve().output(baseDir);
 //    }
-    new CrystalSolver(Molecule.m05, crystal).solve();
-//    new CrystalSolver(Molecule.m05, crystal).solve().output(baseDir);
+//    new CrystalSolver(Molecule.m05, crystal).solve();
+    new CrystalSolver(Molecule.m05, crystal).solve().deDuplicate().output(baseDir);
+//    new CrystalSolver(Molecule.m05, crystal).solve().deDuplicate();
+//    new CrystalSolver(Molecule.m05, crystal).solve().checkForDuplicates();
 //    new CrystalSolver(Molecule.m22, crystal).solve().output(baseDir);
   }
 
   public static void main(String[] args) throws IOException {
-//    solveACrystal("/Users/merlin/Downloads/textfiles/1372/");
+//    solveACrystal("/Users/merlin/Downloads/textfiles/1277/");
+    solveACrystal("/Users/merlin/Downloads/textfiles/1372/");
 //    solveACrystal("/Users/merlin/Downloads/textfiles/59/");
-    solveSeveralCrystals("/Users/merlin/Downloads/textfiles/", 1, 100);
+//    solveSeveralCrystals("/Users/merlin/Downloads/textfiles/", 1, 100);
   }
 
 }

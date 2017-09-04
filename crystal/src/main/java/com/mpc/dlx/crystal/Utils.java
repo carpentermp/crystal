@@ -1,6 +1,7 @@
 package com.mpc.dlx.crystal;
 
 import java.io.File;
+import java.util.Collection;
 
 @SuppressWarnings({"WeakerAccess", "ConstantConditions", "SameParameterValue"})
 public class Utils {
@@ -23,6 +24,17 @@ public class Utils {
 
   public static String addTrailingSlash(String path) {
     return path + (path.endsWith("/") ? "" : "/");
+  }
+
+  public static String join(Collection collection, String separator) {
+    StringBuilder sb = new StringBuilder();
+    for (Object item : collection) {
+      if (sb.length() > 0) {
+        sb.append(separator);
+      }
+      sb.append(item.toString());
+    }
+    return sb.toString();
   }
 
 }

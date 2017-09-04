@@ -2,6 +2,8 @@ package com.mpc.dlx.crystal;
 
 import org.junit.Test;
 
+import java.util.Arrays;
+
 import static org.junit.Assert.*;
 
 public class TestUtils {
@@ -15,6 +17,11 @@ public class TestUtils {
   public void testAddTrailingSlash() {
     assertEquals("abc/", Utils.addTrailingSlash("abc"));
     assertEquals("abc/", Utils.addTrailingSlash("abc/"));
+  }
+
+  @Test
+  public void testJoin() {
+    assertEquals("1, 2, 3", Utils.join(Arrays.asList(1, 2, 3), ", "));
   }
 
 }

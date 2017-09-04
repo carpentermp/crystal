@@ -7,7 +7,8 @@ public class Result {
   private String crystal;
   private String molecule;
   private List<Placement> placements;
-  private List<Adjacency> adjacencies;
+  private List<String> adjacencyOrder;
+  private List<Integer> adjacencyCounts;
 
   public String getCrystal() {
     return crystal;
@@ -33,12 +34,19 @@ public class Result {
     this.placements = placements;
   }
 
-  public List<Adjacency> getAdjacencies() {
-    return adjacencies;
+  public List<String> getAdjacencyOrder() {
+    return adjacencyOrder;
   }
 
-  public void setAdjacencies(List<Adjacency> adjacencies) {
-    this.adjacencies = adjacencies;
+  public void setAdjacencyOrder(List<String> adjacencyOrder) {
+    this.adjacencyOrder = adjacencyOrder;
   }
 
+  public List<Integer> getAdjacencyCounts() {
+    return adjacencyCounts;
+  }
+
+  public void setAdjacencyCounts(List<Integer> adjacencyCounts) {
+    this.adjacencyCounts = adjacencyCounts;
+  }
 }
