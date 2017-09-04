@@ -227,9 +227,24 @@ public class CrystalResult {
     return beadId1 + "-" + beadId2;
   }
 
-  // todo temp
-  public String getInteractionValues() {
-    return Utils.join(adjacencyCounts, ", ");
+  public String getSuggestedFilenamePrefix() {
+    return crystal.getName() + "_" + rootMolecule.getName() + "_" + getBucketName();
+  }
+
+  public String toString() {
+    return getSuggestedFilenamePrefix() + ": " + Utils.join(adjacencyCounts, ", ");
+  }
+
+  public boolean equals(Object obj) {
+    if (obj == null || !(obj instanceof CrystalResult)) {
+      return false;
+    }
+    CrystalResult other = (CrystalResult) obj;
+    return toString().equals(other.toString());
+  }
+
+  public int hashCode() {
+    return toString().hashCode();
   }
 
 }
