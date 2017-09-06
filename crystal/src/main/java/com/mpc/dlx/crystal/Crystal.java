@@ -1,7 +1,5 @@
 package com.mpc.dlx.crystal;
 
-import com.mpc.dlx.crystal.result.Coordinate;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -136,7 +134,7 @@ public class Crystal {
           continue;
         }
         int nodeId = Integer.parseInt(parts[0]);
-        Coordinate coordinate = new Coordinate(parts[1], parts[2], parts[3]);
+        Coordinate coordinate = new Coordinate(Double.parseDouble(parts[1]), Double.parseDouble(parts[2]), Double.parseDouble(parts[3]));
         List<Coordinate> nodeCoordinates = coordinates.computeIfAbsent(nodeId, k -> new ArrayList<>());
         nodeCoordinates.add(coordinate);
       }

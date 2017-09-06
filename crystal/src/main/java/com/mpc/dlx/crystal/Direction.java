@@ -3,12 +3,12 @@ package com.mpc.dlx.crystal;
 @SuppressWarnings({"WeakerAccess", "squid:S00115"})
 public enum Direction {
 
+  Right(1),
+  DownRight(2),
+  DownLeft(3),
+  Left(4),
   UpLeft(5),
   UpRight(6),
-  Left(4),
-  Right(1),
-  DownLeft(3),
-  DownRight(2),
   Back(0);
 
   private final int value;
@@ -65,6 +65,10 @@ public enum Direction {
       }
     }
     throw new IllegalArgumentException("Invalid direction value: " + value);
+  }
+
+  public int value() {
+    return value;
   }
 
 }

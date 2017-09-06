@@ -43,6 +43,7 @@ public class Molecule {
 
   private final String name;
   private final Orientation orientation;
+  private final Direction rotation;
   private final Direction[] buildInstructions;
   private final int[] beadIds;
 
@@ -50,14 +51,19 @@ public class Molecule {
     this(name, Orientation.Left, buildInstructions);
   }
 
-  public Molecule(String name, Orientation orientation, Direction... buildInstructions) {
+  private Molecule(String name, Orientation orientation, Direction... buildInstructions) {
     this(name, DEFAULT_BEAD_IDS, orientation, buildInstructions);
   }
 
-  public Molecule(String name, int[] beadIds, Orientation orientation, Direction... buildInstructions) {
+  private Molecule(String name, int[] beadIds, Orientation orientation, Direction... buildInstructions) {
+    this(name, beadIds, Direction.Right, orientation, buildInstructions);
+  }
+
+  private Molecule(String name, int[] beadIds, Direction rotation, Orientation orientation, Direction... buildInstructions) {
     this.name = name;
     this.beadIds = beadIds;
     this.orientation = orientation;
+    this.rotation = rotation;
     this.buildInstructions = buildInstructions;
   }
 
@@ -66,7 +72,7 @@ public class Molecule {
     for (int i = 0; i < rotatedInstructions.length; i++) {
       rotatedInstructions[i] = buildInstructions[i].rotate();
     }
-    return new Molecule(name, beadIds, orientation, rotatedInstructions);
+    return new Molecule(name, beadIds, rotation.rotate(), orientation, rotatedInstructions);
   }
 
   public Molecule mirror(Direction axis) {
@@ -74,7 +80,7 @@ public class Molecule {
     for (int i = 0; i < mirroredInstructions.length; i++) {
       mirroredInstructions[i] = buildInstructions[i].mirror(axis);
     }
-    return new Molecule(name, beadIds, orientation.opposite(), mirroredInstructions);
+    return new Molecule(name, beadIds, rotation, orientation.opposite(), mirroredInstructions);
   }
 
   public String getName() {
@@ -83,6 +89,10 @@ public class Molecule {
 
   public Orientation getOrientation() {
     return orientation;
+  }
+
+  public Direction getRotation() {
+    return rotation;
   }
 
   public List<Direction> getDirections() {

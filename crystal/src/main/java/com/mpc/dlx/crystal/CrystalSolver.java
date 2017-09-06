@@ -6,7 +6,7 @@ import au.id.bjf.dlx.DLXResultProcessor;
 import au.id.bjf.dlx.data.ColumnObject;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.mpc.dlx.crystal.result.Result;
+import com.mpc.dlx.crystal.result.UnitCellResults;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -26,7 +26,6 @@ public class CrystalSolver {
   final List<Molecule> molecules;
   final List<Row> rows;
   final byte[][] matrix;
-  private int count = 0;
   private final Map<String, Set<CrystalResult>> resultMap = new HashMap<>();
 
   public CrystalSolver(Crystal crystal, Molecule molecule) {
@@ -116,11 +115,12 @@ public class CrystalSolver {
   }
 
   public CrystalSolver solve() {
+    CrystalResultProcessor resultProcessor = new CrystalResultProcessor();
     if (matrix.length > 0) {
       ColumnObject h = DLX.buildSparseMatrix(matrix, columnNames);
-      DLX.solve(h, true, new CrystalResultProcessor());
+      DLX.solve(h, true, resultProcessor);
     }
-    System.out.println("For " + crystal.getName() + "-" + rootMolecule.getName() + " there were " + count + " results!");
+    System.out.println("For " + crystal.getName() + "-" + rootMolecule.getName() + " there were " + resultProcessor.getCount() + " results!");
     for (Map.Entry<String, Set<CrystalResult>> entry : resultMap.entrySet()) {
       System.out.println(entry.getKey() + ": " + entry.getValue().size());
     }
@@ -130,52 +130,43 @@ public class CrystalSolver {
 
   public void output(String outputDir) throws IOException {
     File moleculeDir = Utils.createSubDir(outputDir, rootMolecule.getName());
-    for (Map.Entry<String, Set<CrystalResult>> entry : resultMap.entrySet()) {
-      outputBucket(moleculeDir, entry.getKey(), entry.getValue());
-    }
-  }
-
-  private void outputBucket(File moleculeDir, String bucketName, Set<CrystalResult> results) throws IOException {
-    File bucketDir = Utils.createSubDir(moleculeDir.getAbsolutePath(), bucketName);
-    int count = 0;
-    for (CrystalResult result : results) {
-      Result resultBean = result.toResultBean();
-      String json = gson.toJson(resultBean);
-      String filename = Utils.addTrailingSlash(bucketDir.getAbsolutePath()) + result.getSuggestedFilenamePrefix() + "_" + String.format("%04d", count++) + ".json";
-      try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
-        writer.write(json);
-      }
+    UnitCellResults results = new ResultsMapper(rootMolecule, crystal).map(resultMap);
+    String filename = Utils.addTrailingSlash(moleculeDir.getAbsolutePath()) + rootMolecule.getName() + "_" + crystal.getName() + ".json";
+    String json = gson.toJson(results);
+    try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
+      writer.write(json);
     }
   }
 
   public class CrystalResultProcessor implements DLXResultProcessor {
 
+    private int count = 0;
+
     public boolean processResult(DLXResult dlxResult) {
-      count++;
       CrystalResult result = new CrystalResult(dlxResult, crystal, rootMolecule, rows);
       Set<CrystalResult> results = resultMap.computeIfAbsent(result.getBucketName(), k -> new HashSet<>());
-      results.add(result);
+      if (results.add(result)) {
+        count++;
+      }
       return true; // keep going
+    }
+
+    public int getCount() {
+      return count;
     }
 
   }
 
-  private static void solveSeveralCrystals(String rootDir, int start, int end) {
+  private static void solveSeveralCrystals(String rootInputDir, String rootOutputDir, Molecule molecule, int start, int end) throws IOException {
     for (int i = start; i <= end; i++) {
-      Crystal crystal = null;
-      Molecule m = Molecule.hole;
+      Crystal crystal;
       try {
-        String baseDir = Utils.addTrailingSlash(rootDir) + i + "/";
+        String baseDir = Utils.addTrailingSlash(rootInputDir) + i + "/";
         crystal = new Crystal(baseDir);
-        for (Molecule molecule : Molecule.allMolecules) {
-          m = molecule;
-          new CrystalSolver(crystal, molecule).solve();
-        }
-//        m = Molecule.m22;
-//        new CrystalSolver(Molecule.m22, crystal).solve();
+        new CrystalSolver(crystal, molecule).solve().output(rootOutputDir);
       }
       catch (RuntimeException e) {
-        System.out.println("Failure solving crystal c" + i + "-" + m.getName() + " because of: " + e.getClass() + ": " + e.getLocalizedMessage());
+        System.out.println("Failure solving crystal c" + i + "-" + molecule.getName() + " because of: " + e.getClass() + ": " + e.getLocalizedMessage());
         if (!(e instanceof IllegalArgumentException)) {
           e.printStackTrace();
         }
@@ -195,9 +186,10 @@ public class CrystalSolver {
 
   public static void main(String[] args) throws IOException {
 //    solveACrystal("/Users/merlin/Downloads/textfiles/1277/");
-    solveACrystal("/Users/merlin/Downloads/textfiles/1372/");
+//    solveACrystal("/Users/merlin/Downloads/textfiles/1372/");
 //    solveACrystal("/Users/merlin/Downloads/textfiles/59/");
-//    solveSeveralCrystals("/Users/merlin/Downloads/textfiles/", 1, 100);
+//    solveSeveralCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 1279, 1375);
+    solveSeveralCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 0, 500);
   }
 
 }

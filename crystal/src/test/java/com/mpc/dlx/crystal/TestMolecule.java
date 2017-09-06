@@ -23,8 +23,10 @@ public class TestMolecule {
 
   @Test
   public void testGetters() {
-    assertEquals("m05", Molecule.m05.getName());
+    assertEquals("m05", molecule.getName());
     assertEquals(5, molecule.size());
+    assertEquals(Direction.Right, molecule.getRotation());
+    assertEquals(Direction.Right, mirrored.getRotation());
   }
 
   @Test
@@ -54,6 +56,7 @@ public class TestMolecule {
     assertEquals(molecule.getBeadIds()[2], rotated.getBeadIds()[2]);
     assertEquals(molecule.getBeadIds()[3], rotated.getBeadIds()[3]);
     assertEquals(molecule.getBeadIds()[4], rotated.getBeadIds()[4]);
+    assertEquals(Direction.DownRight, rotated.getRotation());
   }
 
   @Test
@@ -101,6 +104,20 @@ public class TestMolecule {
     for (int expectedId : expectedIds) {
       assertTrue(usedIds.contains(expectedId));
     }
+  }
+
+  @Test
+  public void testRotation() {
+    Molecule r1 = molecule.rotate();
+    Molecule r2 = r1.rotate();
+    Molecule r3 = r2.rotate();
+    Molecule r4 = r3.rotate();
+    Molecule r5 = r4.rotate();
+    assertEquals(Direction.DownRight, r1.getRotation());
+    assertEquals(Direction.DownLeft, r2.getRotation());
+    assertEquals(Direction.Left, r3.getRotation());
+    assertEquals(Direction.UpLeft, r4.getRotation());
+    assertEquals(Direction.UpRight, r5.getRotation());
   }
 
   @Test

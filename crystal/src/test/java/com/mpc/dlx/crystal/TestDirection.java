@@ -76,4 +76,15 @@ public class TestDirection {
     }
   }
 
+  @Test
+  public void testValue() {
+    assertEquals(1, Direction.Right.value());
+    assertEquals(2, Direction.DownRight.value());
+    assertEquals(3, Direction.DownLeft.value());
+    assertEquals(4, Direction.Left.value());
+    assertEquals(5, Direction.UpLeft.value());
+    assertEquals(6, Direction.UpRight.value());
+    assertEquals(0, Direction.Back.value());
+  }
+
 }
