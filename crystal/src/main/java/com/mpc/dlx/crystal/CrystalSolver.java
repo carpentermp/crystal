@@ -129,6 +129,9 @@ public class CrystalSolver {
   }
 
   public void output(String outputDir) throws IOException {
+    if (outputDir == null) {
+      return;
+    }
     File moleculeDir = Utils.createSubDir(outputDir, rootMolecule.getName());
     UnitCellResults results = new ResultsMapper(rootMolecule, crystal).map(resultMap);
     String filename = Utils.addTrailingSlash(moleculeDir.getAbsolutePath()) + rootMolecule.getName() + "_" + crystal.getName() + ".json";
@@ -157,7 +160,7 @@ public class CrystalSolver {
 
   }
 
-  private static void solveSeveralCrystals(String rootInputDir, String rootOutputDir, Molecule molecule, int start, int end) throws IOException {
+  private static void solveCrystals(String rootInputDir, String rootOutputDir, Molecule molecule, int start, int end) throws IOException {
     for (int i = start; i <= end; i++) {
       Crystal crystal;
       try {
@@ -174,22 +177,21 @@ public class CrystalSolver {
     }
   }
 
-  private static void solveACrystal(String baseDir) throws IOException {
-    Crystal crystal = new Crystal(baseDir);
-//    for (Molecule molecule : Molecule.allMolecules) {
-//      new CrystalSolver(molecule, crystal).solve().output(baseDir);
-//    }
-//    new CrystalSolver(Molecule.m05, crystal).solve();
-    new CrystalSolver(crystal, Molecule.m05).solve().output(baseDir);
-//    new CrystalSolver(Molecule.m22, crystal).solve().output(baseDir);
+  private static void solveCrystal(String rootInputDir, String rootOutputDir, Molecule molecule, int crystalId) throws IOException {
+    solveCrystals(rootInputDir, rootOutputDir, molecule, crystalId, crystalId);
   }
 
   public static void main(String[] args) throws IOException {
-//    solveACrystal("/Users/merlin/Downloads/textfiles/1277/");
-//    solveACrystal("/Users/merlin/Downloads/textfiles/1372/");
-//    solveACrystal("/Users/merlin/Downloads/textfiles/59/");
-//    solveSeveralCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 1279, 1375);
-    solveSeveralCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 0, 500);
+//    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 1279, 1375);
+//    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 0, 500);
+    solveCrystal("/Users/merlin/Downloads/textfiles/", null, Molecule.m05, 567);
   }
+
+//  For c567-m05 there were 19 results!
+//  l02r06: 4
+//  l08r00: 1
+//  l06r02: 3
+//  l00r08: 3
+//  l04r04: 8
 
 }
