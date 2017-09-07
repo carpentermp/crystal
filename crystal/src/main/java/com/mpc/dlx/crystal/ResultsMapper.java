@@ -61,7 +61,7 @@ public class ResultsMapper {
       if (resultDuplicateCounts != null) {
         Integer dupCount = resultDuplicateCounts.get(cResult.toString());
         if (dupCount == null) {
-          dupCount = 0;
+          dupCount = 1;
         }
         ratioResults.getDuplicates().add(dupCount);
       }
