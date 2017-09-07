@@ -17,7 +17,7 @@ public class ResultsMapper {
     this.crystal = crystal;
   }
 
-  public UnitCellResults map(Map<String, Set<CrystalResult>> results) {
+  public UnitCellResults map(Map<String, Set<CrystalResult>> results, Map<String, Integer> resultDuplicationCounts) {
     UnitCellResults unitCellResults = new UnitCellResults();
     unitCellResults.setMolecule(rootMolecule.getName());
     unitCellResults.setCrystal(crystal.getName());
@@ -26,7 +26,7 @@ public class ResultsMapper {
     unitCellResults.setRatios(new ArrayList<>());
     List<String> ratios = results.keySet().stream().sorted().collect(Collectors.toList());
     for (String ratio : ratios) {
-      unitCellResults.getRatios().add(mapRatioResults(unitCellResults.getSites(), ratio, results.get(ratio)));
+      unitCellResults.getRatios().add(mapRatioResults(unitCellResults.getSites(), ratio, results.get(ratio), resultDuplicationCounts));
     }
     return unitCellResults;
   }
@@ -45,16 +45,26 @@ public class ResultsMapper {
     unitCellResults.setSiteCoordinates(coordinates);
   }
 
-  private RatioResults mapRatioResults(List<Integer> nodeIds, String ratio, Set<CrystalResult> cResults) {
+  private RatioResults mapRatioResults(List<Integer> nodeIds, String ratio, Set<CrystalResult> cResults, Map<String, Integer> resultDuplicateCounts) {
     RatioResults ratioResults = new RatioResults();
     ratioResults.setRatio(ratio);
     ratioResults.setBeads(new ArrayList<>());
     ratioResults.setAdjacencies(new ArrayList<>());
     ratioResults.setPlacements(new ArrayList<>());
+    if (resultDuplicateCounts != null) {
+      ratioResults.setDuplicates(new ArrayList<>());
+    }
     for (CrystalResult cResult : cResults) {
       ratioResults.getBeads().add(mapBeads(nodeIds, cResult));
       ratioResults.getAdjacencies().add(cResult.getAdjacencyCounts());
       ratioResults.getPlacements().add(mapPlacement(nodeIds, cResult));
+      if (resultDuplicateCounts != null) {
+        Integer dupCount = resultDuplicateCounts.get(cResult.toString());
+        if (dupCount == null) {
+          dupCount = 0;
+        }
+        ratioResults.getDuplicates().add(dupCount);
+      }
     }
     return ratioResults;
   }

@@ -13,10 +13,12 @@ public class CrystalResult {
   private final List<Row> rows;
   private final String bucketName;
   private final List<Integer> adjacencyCounts;
+  private final boolean deduplicateResults;
 
-  public CrystalResult(DLXResult dlxResult, Crystal crystal, Molecule rootMolecule, List<Row> allRows) {
+  public CrystalResult(DLXResult dlxResult, Crystal crystal, Molecule rootMolecule, List<Row> allRows, boolean deduplicateResults) {
     this.crystal = crystal;
     this.rootMolecule = rootMolecule;
+    this.deduplicateResults = deduplicateResults;
     this.rows = convertResultToRows(dlxResult, allRows);
     this.bucketName = buildBucketName();
     this.adjacencyCounts = computeAdjacencyCounts();
@@ -213,6 +215,9 @@ public class CrystalResult {
   }
 
   public boolean equals(Object obj) {
+    if (!deduplicateResults) {
+      return super.equals(obj);
+    }
     if (obj == null || !(obj instanceof CrystalResult)) {
       return false;
     }
@@ -221,6 +226,9 @@ public class CrystalResult {
   }
 
   public int hashCode() {
+    if (!deduplicateResults) {
+      return super.hashCode();
+    }
     return toString().hashCode();
   }
 

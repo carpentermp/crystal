@@ -27,10 +27,13 @@ public class CrystalSolver {
   final List<Row> rows;
   final byte[][] matrix;
   private final Map<String, Set<CrystalResult>> resultMap = new HashMap<>();
+  private final Map<String, Integer> resultDuplicationCounts = new HashMap<>();
+  private final boolean deduplicateResults;
 
-  public CrystalSolver(Crystal crystal, Molecule molecule) {
+  public CrystalSolver(Crystal crystal, Molecule molecule, boolean deduplicateResults) {
     this.crystal = crystal;
     this.rootMolecule = molecule;
+    this.deduplicateResults = deduplicateResults;
     this.columnNames = buildColumnNames(crystal);
     this.molecules = buildMolecules(molecule);
     this.rows = buildRows(molecules);
@@ -133,7 +136,7 @@ public class CrystalSolver {
       return;
     }
     File moleculeDir = Utils.createSubDir(outputDir, rootMolecule.getName());
-    UnitCellResults results = new ResultsMapper(rootMolecule, crystal).map(resultMap);
+    UnitCellResults results = new ResultsMapper(rootMolecule, crystal).map(resultMap, resultDuplicationCounts);
     String filename = Utils.addTrailingSlash(moleculeDir.getAbsolutePath()) + rootMolecule.getName() + "_" + crystal.getName() + ".json";
     String json = gson.toJson(results);
     try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
@@ -146,9 +149,17 @@ public class CrystalSolver {
     private int count = 0;
 
     public boolean processResult(DLXResult dlxResult) {
-      CrystalResult result = new CrystalResult(dlxResult, crystal, rootMolecule, rows);
+      CrystalResult result = new CrystalResult(dlxResult, crystal, rootMolecule, rows, deduplicateResults);
       Set<CrystalResult> results = resultMap.computeIfAbsent(result.getBucketName(), k -> new HashSet<>());
-      if (results.add(result)) {
+      if (deduplicateResults && results.contains(result)) {
+        Integer count = resultDuplicationCounts.get(result.toString());
+        if (count == null) {
+          count = 1;
+        }
+        resultDuplicationCounts.put(result.toString(), ++count);
+      }
+      else {
+        results.add(result);
         count++;
       }
       return true; // keep going
@@ -160,13 +171,13 @@ public class CrystalSolver {
 
   }
 
-  private static void solveCrystals(String rootInputDir, String rootOutputDir, Molecule molecule, int start, int end) throws IOException {
+  private static void solveCrystals(String rootInputDir, String rootOutputDir, Molecule molecule, int start, int end, boolean deduplicateResults) throws IOException {
     for (int i = start; i <= end; i++) {
       Crystal crystal;
       try {
         String baseDir = Utils.addTrailingSlash(rootInputDir) + i + "/";
         crystal = new Crystal(baseDir);
-        new CrystalSolver(crystal, molecule).solve().output(rootOutputDir);
+        new CrystalSolver(crystal, molecule, deduplicateResults).solve().output(rootOutputDir);
       }
       catch (RuntimeException e) {
         System.out.println("Failure solving crystal c" + i + "-" + molecule.getName() + " because of: " + e.getClass() + ": " + e.getLocalizedMessage());
@@ -177,14 +188,15 @@ public class CrystalSolver {
     }
   }
 
-  private static void solveCrystal(String rootInputDir, String rootOutputDir, Molecule molecule, int crystalId) throws IOException {
-    solveCrystals(rootInputDir, rootOutputDir, molecule, crystalId, crystalId);
+  private static void solveCrystal(String rootInputDir, String rootOutputDir, Molecule molecule, int crystalId, boolean deduplicateResults) throws IOException {
+    solveCrystals(rootInputDir, rootOutputDir, molecule, crystalId, crystalId, deduplicateResults);
   }
 
   public static void main(String[] args) throws IOException {
-//    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 1279, 1375);
+//    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 1279, 1375, true);
 //    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 0, 500);
-    solveCrystal("/Users/merlin/Downloads/textfiles/", null, Molecule.m05, 567);
+//    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 501, 561);
+    solveCrystal("/Users/merlin/Downloads/textfiles/", null, Molecule.m05, 1372, false);
   }
 
 //  For c567-m05 there were 19 results!

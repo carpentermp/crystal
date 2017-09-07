@@ -9,6 +9,7 @@ public class RatioResults {
   private List<List<Integer>> beads;
   private List<List<Integer>> adjacencies;
   private List<List<Integer>> placements;
+  private List<Integer> duplicates;
 
   public String getRatio() {
     return ratio;
@@ -41,4 +42,13 @@ public class RatioResults {
   public void setPlacements(List<List<Integer>> placements) {
     this.placements = placements;
   }
+
+  public List<Integer> getDuplicates() {
+    return duplicates;
+  }
+
+  public void setDuplicates(List<Integer> duplicates) {
+    this.duplicates = duplicates;
+  }
+
 }
