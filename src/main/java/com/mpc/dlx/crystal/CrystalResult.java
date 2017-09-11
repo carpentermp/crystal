@@ -14,6 +14,7 @@ public class CrystalResult {
   private final String bucketName;
   private final List<Integer> adjacencyCounts;
   private final boolean deduplicateResults;
+  private final String equalsString;
 
   public CrystalResult(DLXResult dlxResult, Crystal crystal, Molecule rootMolecule, List<Row> allRows, boolean deduplicateResults) {
     this.crystal = crystal;
@@ -22,6 +23,8 @@ public class CrystalResult {
     this.rows = convertResultToRows(dlxResult, allRows);
     this.bucketName = buildBucketName();
     this.adjacencyCounts = computeAdjacencyCounts();
+    // compute this once for performance
+    this.equalsString = crystal.getName() + "_" + rootMolecule.getName() + "_" + getBucketName() + ": " + Utils.join(adjacencyCounts, ", ");
   }
 
   public String getBucketName() {
@@ -202,16 +205,12 @@ public class CrystalResult {
     return beadId1 + "-" + beadId2;
   }
 
-  public String getSuggestedFilenamePrefix() {
-    return crystal.getName() + "_" + rootMolecule.getName() + "_" + getBucketName();
-  }
-
   public List<Integer> getAdjacencyCounts() {
     return adjacencyCounts;
   }
 
   public String toString() {
-    return getSuggestedFilenamePrefix() + ": " + Utils.join(adjacencyCounts, ", ");
+    return equalsString;
   }
 
   public boolean equals(Object obj) {

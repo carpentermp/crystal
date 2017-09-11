@@ -13,7 +13,7 @@ public class TestCrystalSolver {
 
   @Before
   public void setUp() {
-    solver = new CrystalSolver(new Crystal(Utils.getResourceFilename("1372")), Molecule.m05, true);
+    solver = new CrystalSolver(new Crystal(Utils.getResourceFilename("1372")), Molecule.m05, true, 0);
   }
 
   @Test

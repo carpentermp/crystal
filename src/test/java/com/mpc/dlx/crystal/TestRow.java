@@ -43,7 +43,7 @@ public class TestRow {
     Row holeRow2 = new Row(2421, 1);
     assertTrue(holeRow1.isHole());
     assertTrue(holeRow2.isHole());
-    String[] columnNames = CrystalSolver.buildColumnNames(c59);
+    String[] columnNames = CrystalSolver.buildColumnNames(c59, 0);
     byte[] hole1Bytes = holeRow1.getBytes(columnNames);
     byte[] hole2Bytes = holeRow2.getBytes(columnNames);
     assertEquals(1, hole1Bytes[0]);
@@ -58,7 +58,7 @@ public class TestRow {
 
   @Test
   public void testBytes() {
-    String[] columnNames = CrystalSolver.buildColumnNames(c1372);
+    String[] columnNames = CrystalSolver.buildColumnNames(c1372, 0);
     byte[] bytes = row.getBytes(columnNames);
     assertEquals(1, bytes[6]);
     assertEquals(1, bytes[20]);

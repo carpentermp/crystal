@@ -36,9 +36,7 @@ public class Molecule {
   public static final Molecule hole = new Molecule("hole", new int[0], Orientation.Circular);
 
   public static final Molecule[] allMolecules = new Molecule[] {
-    m01, m02, m03,
-//    m04,
-    m05, m06, m07, m08, m09, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20, m21, m22
+    m01, m02, m03, m04, m05, m06, m07, m08, m09, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20, m21, m22
   };
 
   private final String name;
@@ -174,6 +172,13 @@ public class Molecule {
     parts.add(orientation);
     Collections.addAll(parts, buildInstructions);
     return Objects.hash(parts.toArray(new Object[parts.size()]));
+  }
+
+  public static Molecule fromNumber(int index) {
+    if (index < 1 || index > allMolecules.length) {
+      throw new IllegalArgumentException("Invalid molecule number: " + index);
+    }
+    return allMolecules[index - 1];
   }
 
 }
