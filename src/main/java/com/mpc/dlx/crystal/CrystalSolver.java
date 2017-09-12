@@ -10,7 +10,6 @@ import com.mpc.dlx.crystal.result.UnitCellResults;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
@@ -20,26 +19,40 @@ public class CrystalSolver {
   private static final String HOLES_PREFIX = "h";
   private static final Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
-  private final Crystal crystal;
   private final Molecule rootMolecule;
+  private final Crystal crystal;
   final String[] columnNames;
   final List<Molecule> molecules;
   final List<Row> rows;
   final byte[][] matrix;
   private final Map<String, Set<CrystalResult>> resultMap = new HashMap<>();
   private final Map<String, Integer> resultDuplicationCounts = new HashMap<>();
-  private final boolean deduplicateResults;
-  private final int extraHoles;
+  private boolean deduplicateResults;
+  private int extraHoles;
+  private boolean doGZip;
 
-  public CrystalSolver(Crystal crystal, Molecule molecule, boolean deduplicateResults, int extraHoles) {
-    this.crystal = crystal;
+  public CrystalSolver(Molecule molecule, Crystal crystal) {
     this.rootMolecule = molecule;
-    this.deduplicateResults = deduplicateResults;
-    this.extraHoles = extraHoles;
+    this.crystal = crystal;
     this.columnNames = buildColumnNames(crystal, extraHoles);
     this.molecules = buildMolecules(molecule);
     this.rows = buildRows(molecules);
     this.matrix = buildMatrix(rows);
+  }
+
+  public CrystalSolver deduplicateResults(boolean deduplicateResults) {
+    this.deduplicateResults = deduplicateResults;
+    return this;
+  }
+
+  public CrystalSolver extraHoles(int count) {
+    this.extraHoles = count;
+    return this;
+  }
+
+  public CrystalSolver gZip(boolean doGZip) {
+    this.doGZip = doGZip;
+    return this;
   }
 
   static String[] buildColumnNames(Crystal crystal, int extraHoles) {
@@ -150,10 +163,9 @@ public class CrystalSolver {
     }
     File moleculeDir = Utils.createSubDir(outputDir, rootMolecule.getName());
     UnitCellResults results = new ResultsMapper(rootMolecule, crystal).map(resultMap, resultDuplicationCounts);
-    String filename = Utils.addTrailingSlash(moleculeDir.getAbsolutePath()) + getFilenamePrefix() + ".json";
-    String json = gson.toJson(results);
-    try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
-      writer.write(json);
+    String filename = Utils.addTrailingSlash(moleculeDir.getAbsolutePath()) + getFilenamePrefix() + ".json" + (doGZip ? ".gz" : "");
+    try (BufferedWriter writer = Utils.getWriter(filename)) {
+      gson.toJson(results, writer);
     }
   }
 
@@ -184,13 +196,18 @@ public class CrystalSolver {
 
   }
 
-  private static void solveCrystals(String rootInputDir, String rootOutputDir, Molecule molecule, int start, int end, boolean deduplicateResults, int extraHoles) throws IOException {
+  private static void solveCrystals(String rootInputDir, String rootOutputDir, Molecule molecule, int start, int end, boolean deduplicateResults, int extraHoles, boolean doGZip) throws IOException {
     for (int i = start; i <= end; i++) {
       Crystal crystal;
       try {
         String baseDir = Utils.addTrailingSlash(rootInputDir) + i + "/";
         crystal = new Crystal(baseDir);
-        new CrystalSolver(crystal, molecule, deduplicateResults, extraHoles).solve().output(rootOutputDir);
+        new CrystalSolver(molecule, crystal)
+          .deduplicateResults(deduplicateResults)
+          .extraHoles(extraHoles)
+          .gZip(doGZip)
+          .solve()
+          .output(rootOutputDir);
       }
       catch (RuntimeException e) {
         System.out.println("Failure solving crystal c" + i + "-" + molecule.getName() + " because of: " + e.getClass() + ": " + e.getLocalizedMessage());
@@ -201,8 +218,8 @@ public class CrystalSolver {
     }
   }
 
-  private static void solveCrystal(String rootInputDir, String rootOutputDir, Molecule molecule, int crystalId, boolean deduplicateResults, int extraHoleCount) throws IOException {
-    solveCrystals(rootInputDir, rootOutputDir, molecule, crystalId, crystalId, deduplicateResults, extraHoleCount);
+  private static void solveCrystal(String rootInputDir, String rootOutputDir, Molecule molecule, int crystalId, boolean deduplicateResults, int extraHoleCount, boolean doGZip) throws IOException {
+    solveCrystals(rootInputDir, rootOutputDir, molecule, crystalId, crystalId, deduplicateResults, extraHoleCount, doGZip);
   }
 
   private static void usage() {
@@ -215,6 +232,7 @@ public class CrystalSolver {
     System.out.println("  -e num         ending crystal number (same as starting number if not specified)");
     System.out.println("  -d             don't deduplicate results");
     System.out.println("  -h num         count of extra holes (must be multiple of molecule size)");
+    System.out.println("  -g             gzip output file(s)");
   }
 
   private static void solveCrystalsWithArgs(String[] args) throws IOException {
@@ -225,6 +243,7 @@ public class CrystalSolver {
     int endingCrystal = 0;
     boolean deduplicateResults = true;
     int extraHoles = 0;
+    boolean doGZip = false;
     try {
       for (int i = 0; i < args.length; i++) {
         String arg = args[i];
@@ -247,6 +266,9 @@ public class CrystalSolver {
           case "-h":
             extraHoles = Integer.parseInt(args[++i]);
             break;
+          case "-g":
+            doGZip = true;
+            break;
           default:
             if (molecule == null) {
               molecule = Molecule.fromNumber(Integer.parseInt(arg));
@@ -266,7 +288,7 @@ public class CrystalSolver {
       if ((extraHoles % molecule.size()) != 0) {
         throw new IllegalArgumentException("Hole count must be multiple of molecule size");
       }
-      solveCrystals(inputDir, outputDir, molecule, startingCrystal, endingCrystal, deduplicateResults, extraHoles);
+      solveCrystals(inputDir, outputDir, molecule, startingCrystal, endingCrystal, deduplicateResults, extraHoles, doGZip);
     }
     catch (RuntimeException e) {
       System.out.println("\nError: " + e.getMessage() + "\n");
@@ -288,7 +310,7 @@ public class CrystalSolver {
 //    solveCrystal("/Users/merlin/Downloads/textfiles/", null, Molecule.m05, 1372, false, 0);
 //    solveCrystal("/Users/merlin/Downloads/textfiles/", null, Molecule.m05, 29, true, 5);
 //    solveCrystal("/Users/merlin/Downloads/textfiles/", null, Molecule.m05, 29, true, 0);
-    solveCrystal("/Users/carpentermp/Downloads/textfiles/", null, Molecule.m12, 0, true, 0);
+    solveCrystal("/Users/carpentermp/Downloads/textfiles/", "/Users/carpentermp/Downloads/", Molecule.m12, 0, true, 0, true);
   }
 
 }
