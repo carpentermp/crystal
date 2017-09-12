@@ -93,13 +93,15 @@ public class CrystalResult {
   private List<Integer> computeAdjacencyCounts() {
     Map<String, Integer> adjacencyCountMap = buildAdjacencyCountMap(crystal, rows);
     for (Row row : rows) {
-      // subtract the counts for adjacencies within the molecules--they don't count
-      subtractAdjacencies(adjacencyCountMap, buildAdjacencyCountMap(crystal, Collections.singletonList(row)));
+      if (!row.isHole()) {
+        // subtract the counts for adjacencies within the molecules--they don't count
+        row.getMolecule().subtractInternalAdjacencies(adjacencyCountMap);
+      }
     }
     List<Integer> adjacencyCounts = new ArrayList<>();
     for (int i = 1; i <= rootMolecule.size(); i++) {
       for (int j = i; j <= rootMolecule.size(); j++) {
-        Integer count = adjacencyCountMap.get(buildAdjacencyName(i, j));
+        Integer count = adjacencyCountMap.get(Molecule.buildAdjacencyName(i, j));
         if (count == null) {
           count = 0;
         }
@@ -107,18 +109,6 @@ public class CrystalResult {
       }
     }
     return adjacencyCounts;
-  }
-
-  static void subtractAdjacencies(Map<String, Integer> adjacencyCounts, Map<String, Integer> countsToSubtract) {
-    for (Map.Entry<String, Integer> entry : countsToSubtract.entrySet()) {
-      String key = entry.getKey();
-      Integer countToSubtract = entry.getValue();
-      Integer count = adjacencyCounts.get(key);
-      if (count == null) {
-        throw new IllegalArgumentException("Count did not exist!: " + key);
-      }
-      adjacencyCounts.put(key, count - countToSubtract);
-    }
   }
 
   static Map<String, Integer> buildAdjacencyCountMap(Crystal crystal, List<Row> rows) {
@@ -151,7 +141,7 @@ public class CrystalResult {
     if (beadId2 == null) {
       return;
     }
-    String name = buildAdjacencyName(beadId1, beadId2);
+    String name = Molecule.buildAdjacencyName(beadId1, beadId2);
     Integer count = adjacencyCounts.get(name);
     if (count == null) {
       count = 0;
@@ -183,26 +173,6 @@ public class CrystalResult {
       }
     }
     return nodeToBeadIdMap;
-  }
-
-  static List<String> computeAdjacencyOrder(Molecule molecule) {
-    List<String> rtn = new ArrayList<>();
-    int size = molecule.size();
-    for (int i = 1; i <= size; i++) {
-      for (int j = i; j <= size; j++) {
-        rtn.add(buildAdjacencyName(i, j));
-      }
-    }
-    return rtn;
-  }
-
-  static String buildAdjacencyName(int beadId1, int beadId2) {
-    if (beadId1 > beadId2) {
-      int temp = beadId1;
-      beadId1 = beadId2;
-      beadId2 = temp;
-    }
-    return beadId1 + "-" + beadId2;
   }
 
   public List<Integer> getAdjacencyCounts() {

@@ -21,7 +21,7 @@ public class ResultsMapper {
     UnitCellResults unitCellResults = new UnitCellResults();
     unitCellResults.setMolecule(rootMolecule.getName());
     unitCellResults.setCrystal(crystal.getName());
-    unitCellResults.setAdjacencyOrder(CrystalResult.computeAdjacencyOrder(rootMolecule));
+    unitCellResults.setAdjacencyOrder(rootMolecule.getAdjacencyOrder());
     buildSitesAndCoordinates(unitCellResults);
     unitCellResults.setRatios(new ArrayList<>());
     List<String> ratios = results.keySet().stream().sorted().collect(Collectors.toList());

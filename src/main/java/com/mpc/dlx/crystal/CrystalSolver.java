@@ -136,6 +136,9 @@ public class CrystalSolver {
     System.out.println("For " + getFilenamePrefix() + " there were " + resultProcessor.getCount() + " results!");
     for (Map.Entry<String, Set<CrystalResult>> entry : resultMap.entrySet()) {
       System.out.println(entry.getKey() + ": " + entry.getValue().size());
+      if (!entry.getValue().isEmpty()) {
+        System.out.println("Adjacencies for first result: " + entry.getValue().iterator().next().getAdjacencyCounts());
+      }
     }
     System.out.println();
     return this;
@@ -260,7 +263,7 @@ public class CrystalSolver {
       if (inputDir == null) {
         throw new IllegalArgumentException("Input directory must be specified.");
       }
-      if (extraHoles % molecule.size() != 0) {
+      if ((extraHoles % molecule.size()) != 0) {
         throw new IllegalArgumentException("Hole count must be multiple of molecule size");
       }
       solveCrystals(inputDir, outputDir, molecule, startingCrystal, endingCrystal, deduplicateResults, extraHoles);
@@ -272,7 +275,7 @@ public class CrystalSolver {
   }
 
   public static void main(String[] args) throws IOException {
-    solveCrystalsWithArgs(args);
+//    solveCrystalsWithArgs(args);
 //    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 0, 870, true, 0);
 //    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 897, 1031, true, 0);
 //    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 1089, 1206, true, 0);
@@ -285,6 +288,7 @@ public class CrystalSolver {
 //    solveCrystal("/Users/merlin/Downloads/textfiles/", null, Molecule.m05, 1372, false, 0);
 //    solveCrystal("/Users/merlin/Downloads/textfiles/", null, Molecule.m05, 29, true, 5);
 //    solveCrystal("/Users/merlin/Downloads/textfiles/", null, Molecule.m05, 29, true, 0);
+    solveCrystal("/Users/carpentermp/Downloads/textfiles/", null, Molecule.m12, 0, true, 0);
   }
 
 }

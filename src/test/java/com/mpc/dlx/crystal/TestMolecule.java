@@ -122,9 +122,9 @@ public class TestMolecule {
 
   @Test
   public void testEquals() {
-    Molecule m1 = new Molecule("M00", Direction.Left, Direction.DownLeft);
-    Molecule m2 = new Molecule("M00", Direction.Left, Direction.DownLeft);
-    Molecule m3 = new Molecule("M00", Direction.Left, Direction.DownRight);
+    Molecule m1 = new Molecule("M00", new int[] {}, Direction.Left, Direction.DownLeft);
+    Molecule m2 = new Molecule("M00", new int[] {}, Direction.Left, Direction.DownLeft);
+    Molecule m3 = new Molecule("M00", new int[] {}, Direction.Left, Direction.DownRight);
     assertEquals(m1, m2);
     assertNotEquals(m1, m3);
     assertFalse(m1.equals(null));
@@ -134,11 +134,23 @@ public class TestMolecule {
 
   @Test
   public void testHash() {
-    Molecule m1 = new Molecule("M00", Direction.Left, Direction.DownLeft);
-    Molecule m2 = new Molecule("M00", Direction.Left, Direction.DownLeft);
-    Molecule m3 = new Molecule("M00", Direction.Left, Direction.DownRight);
+    Molecule m1 = new Molecule("M00", new int[] {}, Direction.Left, Direction.DownLeft);
+    Molecule m2 = new Molecule("M00", new int[] {}, Direction.Left, Direction.DownLeft);
+    Molecule m3 = new Molecule("M00", new int[] {}, Direction.Left, Direction.DownRight);
     assertEquals(m1.hashCode(), m2.hashCode());
     assertNotEquals(m1.hashCode(), m3.hashCode());
+  }
+
+  @Test
+  public void testBuildAdjacencyName() {
+    assertEquals("1-1", Molecule.buildAdjacencyName(1, 1));
+    assertEquals("1-3", Molecule.buildAdjacencyName(3, 1));
+  }
+
+  @Test
+  public void testComputeAdjacencyOrder() {
+    assertEquals("1-1, 1-2, 1-3, 1-4, 1-5, 2-2, 2-3, 2-4, 2-5, 3-3, 3-4, 3-5, 4-4, 4-5, 5-5",
+                 Utils.join(Molecule.m05.getAdjacencyOrder(), ", "));
   }
 
 }
