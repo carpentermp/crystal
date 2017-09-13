@@ -19,7 +19,7 @@ import java.util.List;
  * <p>
  * See Knuth, D.; "Dancing Links", Stanford University, 2000.
  */
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "squid:S3776"})
 public class DLX {
 
   /**
@@ -80,7 +80,7 @@ public class DLX {
 
     // For each row, build a list and stitch it onto the column headers
     long rowSequenceNumber = 0;
-    final List<DataObject> thisRowObjects = new LinkedList<DataObject>();
+    final List<DataObject> thisRowObjects = new LinkedList<>();
     for (int j = 0; j < input.length; ++j) {
       thisRowObjects.clear();
       ColumnObject currentCol = (ColumnObject) h.R;
@@ -108,7 +108,7 @@ public class DLX {
         currentCol = (ColumnObject) currentCol.R;
       }
       // Link all data objects built for this row horizontally
-      if (thisRowObjects.size() > 0) {
+      if (!thisRowObjects.isEmpty()) {
         final Iterator<DataObject> iter = thisRowObjects.iterator();
         final DataObject first = iter.next();
         while (iter.hasNext()) {
@@ -154,7 +154,7 @@ public class DLX {
   public static void solve(ColumnObject h, boolean useSHeuristic,
                            DLXResultProcessor resultProcessor) {
     solve(h, useSHeuristic, resultProcessor, 0,
-        new ArrayList<DataObject>());
+        new ArrayList<>());
   }
 
   /**
@@ -185,7 +185,7 @@ public class DLX {
     }
 
     int total = numMandatory + numOptional;
-    DataObject columns[] = new DataObject[total];
+    DataObject[] columns = new DataObject[total];
     DataObject current = h.R;
     for (int i = 0; i < total; ++i) {
       columns[i] = current;
@@ -271,11 +271,10 @@ public class DLX {
     }
   }
 
-  private static boolean processResult(DLXResultProcessor processor,
-                                       List<DataObject> o) {
-    final List<List<Object>> resultSet = new LinkedList<List<Object>>();
+  private static boolean processResult(DLXResultProcessor processor, List<DataObject> o) {
+    final List<List<Object>> resultSet = new LinkedList<>();
     for (final DataObject oK : o) {
-      final List<Object> resultRow = new LinkedList<Object>();
+      final List<Object> resultRow = new LinkedList<>();
       DataObject node = oK;
       do {
         resultRow.add(((ColumnObject) node.C).name);
