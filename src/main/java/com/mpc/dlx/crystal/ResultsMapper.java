@@ -71,7 +71,15 @@ public class ResultsMapper {
 
   private List<Integer> mapBeads(List<Integer> nodeIds, CrystalResult cResult) {
     Map<Node, Integer> nodeToBeadIdMap = CrystalResult.buildNodeToBeadIdMap(crystal, cResult.getRows(), true);
-    return nodeIds.stream().map(nodeId -> nodeToBeadIdMap.get(crystal.getNode(nodeId))).collect(Collectors.toList());
+    return nodeIds.stream()
+        .map(nodeId -> {
+          Integer beadId = nodeToBeadIdMap.get(crystal.getNode(nodeId));
+          if (beadId == null) {
+            beadId = 0;
+          }
+          return beadId;
+        })
+        .collect(Collectors.toList());
   }
 
   private List<Integer> mapPlacement(List<Integer> nodeIds, CrystalResult cResult) {

@@ -1,6 +1,7 @@
 package com.mpc.dlx.crystal;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @SuppressWarnings({"WeakerAccess", "squid:S1168"})
 public class Row {
@@ -9,12 +10,21 @@ public class Row {
   private final Molecule molecule;
   private final Set<Integer> usedIds;
   private final Integer holeIndex;
+  private final String key;
 
   public Row(int nodeId, Molecule molecule, Set<Integer> usedIds) {
     this.nodeId = nodeId;
     this.molecule = molecule;
     this.usedIds = usedIds;
     this.holeIndex = null;
+    this.key = buildKey(usedIds, null);
+  }
+
+  public static String buildKey(Collection<Integer> usedIds, Integer holeIndex) {
+    if (holeIndex != null) {
+      return "h" + holeIndex + "-" + usedIds.iterator().next();
+    }
+    return Utils.join(usedIds.stream().sorted().collect(Collectors.toList()), "-");
   }
 
   public Row(int holeNodeId, int holeIndex) {
@@ -22,6 +32,7 @@ public class Row {
     this.molecule = Molecule.hole;
     this.usedIds = new HashSet<>(Collections.singletonList(holeNodeId));
     this.holeIndex = holeIndex;
+    this.key = buildKey(usedIds, holeIndex);
   }
 
   public byte[] getBytes(String[] columns) {
@@ -54,12 +65,12 @@ public class Row {
     return Collections.unmodifiableSet(usedIds);
   }
 
-  public boolean isThisRow(Collection<Integer> ids) {
-    return !(ids == null || ids.size() != usedIds.size()) && ids.stream().allMatch(usedIds::contains);
-  }
-
   public boolean isHole() {
     return holeIndex != null;
+  }
+
+  public String getKey() {
+    return key;
   }
 
 }

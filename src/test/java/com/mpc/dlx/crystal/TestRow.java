@@ -3,7 +3,6 @@ package com.mpc.dlx.crystal;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.HashSet;
 import java.util.Set;
 
 import static org.junit.Assert.*;
@@ -69,17 +68,6 @@ public class TestRow {
     assertEquals(0, bytes[2]);
     assertEquals(0, bytes[33]);
     assertEquals(0, bytes[55]);
-  }
-
-  @Test
-  public void testIsThisRow() throws Exception {
-    assertTrue(row.isThisRow(usedIds));
-    Set<Integer> otherUsedIds = new HashSet<>(usedIds);
-    assertTrue(row.isThisRow(otherUsedIds));
-    otherUsedIds.add(1);
-    assertFalse(row.isThisRow(otherUsedIds));
-    otherUsedIds.remove(55);
-    assertFalse(row.isThisRow(otherUsedIds));
   }
 
 }

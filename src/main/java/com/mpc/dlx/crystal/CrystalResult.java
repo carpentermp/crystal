@@ -1,9 +1,6 @@
 package com.mpc.dlx.crystal;
 
-import au.id.bjf.dlx.DLXResult;
-
 import java.util.*;
-import java.util.stream.Collectors;
 
 @SuppressWarnings({"WeakerAccess", "squid:S1640", "squid:HiddenFieldCheck"})
 public class CrystalResult {
@@ -16,11 +13,11 @@ public class CrystalResult {
   private final boolean deduplicateResults;
   private final String equalsString;
 
-  public CrystalResult(DLXResult dlxResult, Crystal crystal, Molecule rootMolecule, List<Row> allRows, boolean deduplicateResults) {
+  public CrystalResult(Crystal crystal, Molecule rootMolecule, List<Row> rows, boolean deduplicateResults) {
     this.crystal = crystal;
     this.rootMolecule = rootMolecule;
     this.deduplicateResults = deduplicateResults;
-    this.rows = convertResultToRows(dlxResult, allRows);
+    this.rows = rows;
     this.bucketName = buildBucketName();
     this.adjacencyCounts = computeAdjacencyCounts();
     // compute this once for performance
@@ -33,28 +30,6 @@ public class CrystalResult {
 
   public List<Row> getRows() {
     return Collections.unmodifiableList(rows);
-  }
-
-  private List<Row> convertResultToRows(DLXResult result, List<Row> allRows) {
-    List<Row> resultRows = new ArrayList<>();
-    Iterator<List<Object>> it = result.rows();
-    while (it.hasNext()) {
-      List<Integer> usedIds = it.next()
-          .stream()
-          .map(String::valueOf)
-          .filter(s -> Character.isDigit(s.charAt(0)))
-          .map(Integer::parseInt)
-          .collect(Collectors.toList());
-      resultRows.add(findRow(usedIds, allRows));
-    }
-    return resultRows;
-  }
-
-  private Row findRow(List<Integer> usedIds, List<Row> allRows) {
-    return allRows.stream()
-        .filter(r -> r.isThisRow(usedIds))
-        .findAny()
-        .orElse(null);
   }
 
   private String buildBucketName() {
