@@ -73,11 +73,11 @@ public class CrystalSolver {
     moleculeVariants.add(molecule);
     Molecule l = molecule;
     Molecule r = null;
-    if (molecule.getOrientation() != Orientation.Symmetric && molecule.getOrientation() != Orientation.AChiral) {
+    if (molecule.getOrientation() == Orientation.Left || molecule.getOrientation() == Orientation.Right) {
       r = molecule.mirror(Direction.Right);
       moleculeVariants.add(r);
     }
-    int rotations = molecule.getOrientation() == Orientation.Symmetric ? 2 : 5;
+    int rotations = molecule.getDistinctRotationCount() - 1;
     for (int i = 0; i < rotations; i++) {
       l = l.rotate();
       moleculeVariants.add(l);
@@ -397,7 +397,7 @@ public class CrystalSolver {
 
   public static void main(String[] args) throws IOException {
     solveCrystalsWithArgs(args);
-//    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 0, 390, true, 0, true);
+//    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 0, 390, true, 0, false);
 //    solveCrystals("/Users/merlin/Downloads/textfiles/", null, Molecule.m05, 390, 500, true, 0, false);
 //    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 0, 870, true, 0);
 //    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 897, 1031, true, 0);

@@ -32,7 +32,12 @@ public class ResultsMapper {
   }
 
   private void buildSitesAndCoordinates(UnitCellResults unitCellResults) {
-    List<Integer> nodeIds = crystal.getNodeIds().stream().sorted().collect(Collectors.toList());
+    List<Integer> nodeIds = new ArrayList<>();
+    Node removedNode = crystal.getRemovedNode();
+    if (removedNode != null) {
+      nodeIds.add(removedNode.getId());
+    }
+    nodeIds.addAll(crystal.getNodeIds().stream().sorted().collect(Collectors.toList()));
     List<Integer> allNodeIds = new ArrayList<>();
     List<List<Double>> coordinates = new ArrayList<>();
     for (int i = 0; i < 9; i++) {
@@ -90,7 +95,7 @@ public class ResultsMapper {
     List<Integer> placements = new ArrayList<>();
     for (Integer nodeId : nodeIds) {
       Row row = nodeIdToRowMap.get(nodeId);
-      int rotation = 0;
+      int rotation = Direction.Right.value(); // it's the removed origin hole
       if (row != null) {
         rotation = row.getMolecule().getRotation().value();
       }

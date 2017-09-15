@@ -39,7 +39,7 @@ public class Molecule {
   private static final int[] m20Adjacencies = {0,   1,   0,   0,   0,   0,   1,   1,   1,   0,   1,   1,   0,   0,   0};
   private static final int[] m21Adjacencies = {0,   1,   1,   0,   0,   0,   1,   1,   0,   0,   1,   1,   0,   1,   0};
   private static final int[] m22Adjacencies = {0,   1,   0,   1,   0,   0,   1,   1,   1,   0,   0,   1,   0,   0,   0};
-  private static final int[] holAdjacencies = {0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0};
+  private static final int[] holeAdjacencies= {0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0};
 
   public static final Molecule m01 = new Molecule("m01", m01Adjacencies, Direction.Right, Direction.Right, Direction.Right, Direction.DownRight);
   public static final Molecule m02 = new Molecule("m02", m02Adjacencies, Direction.Right, Direction.Right, Direction.Right, Direction.DownLeft);
@@ -64,7 +64,7 @@ public class Molecule {
   public static final Molecule m21 = new Molecule("m21", m21Adjacencies, Orientation.AChiral, Direction.DownRight, Direction.UpRight, Direction.DownRight, Direction.UpRight);
   public static final Molecule m22 = new Molecule("m22", m22Adjacencies, M22_BEAD_IDS, Orientation.AChiral, Direction.DownRight, Direction.UpRight, Direction.UpRight, Direction.DownRight);
 
-  public static final Molecule hole = new Molecule("hole", holAdjacencies, new int[] {}, Orientation.Circular);
+  public static final Molecule hole = new Molecule("hole", holeAdjacencies, new int[] {0}, Orientation.Circular);
 
   public static final Molecule[] allMolecules = new Molecule[] {
     m01, m02, m03, m04, m05, m06, m07, m08, m09, m10, m11, m12, m13, m14, m15, m16, m17, m18, m19, m20, m21, m22
@@ -124,6 +124,21 @@ public class Molecule {
 
   public Direction getRotation() {
     return rotation;
+  }
+
+  public int getDistinctRotationCount() {
+    switch (orientation) {
+      case Left:
+      case Right:
+      case AChiral:
+        return 6;
+      case Symmetric:
+        return 3;
+      case Circular:
+        return 1;
+      default:
+        throw new IllegalArgumentException("Unknown orientation: " + orientation);
+    }
   }
 
   public List<Direction> getDirections() {

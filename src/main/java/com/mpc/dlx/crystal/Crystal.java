@@ -17,6 +17,7 @@ public class Crystal {
   private final Map<Integer, Node> nodes = new HashMap<>();
   private final Map<Integer, List<Coordinate>> coordinates;
   private int holeCount;
+  private Node removedNode;
 
   public Crystal(String baseDir) {
     this(baseDir, DEFAULT_MOLECULE_SIZE, nameFromBaseDir(baseDir));
@@ -30,11 +31,9 @@ public class Crystal {
       createNodes(connections);
       int holeCount = nodes.size() % moleculeSize;
       if (holeCount != 0) {
-        removeNode(0);
+        this.removedNode = nodes.get(0);
+        removeNode(this.removedNode);
         holeCount--;
-//        if (holeCount > 1) {
-//          throw new IllegalArgumentException("Unit cell with this many holes not supported yet. Min # of holes in this crystal: " + (holeCount + 1));
-//        }
         this.holeCount = holeCount;
       }
       this.coordinates = readInCoordinates(baseDir);
@@ -68,21 +67,24 @@ public class Crystal {
     return "c" + baseDir.substring(baseDir.lastIndexOf('/') + 1);
   }
 
-  private void removeNode(int nodeId) {
-    Node nodeZero = nodes.get(nodeId);
-    Node rightNode = nodeZero.get(Direction.Right);
-    Node downRightNode = nodeZero.get(Direction.DownRight);
-    Node downLeftNode = nodeZero.get(Direction.DownLeft);
-    Node leftNode = nodeZero.get(Direction.Left);
-    Node upLeftNode = nodeZero.get(Direction.UpLeft);
-    Node upRightNode = nodeZero.get(Direction.UpRight);
+  private void removeNode(Node nodeToRemove) {
+    Node rightNode = nodeToRemove.get(Direction.Right);
+    Node downRightNode = nodeToRemove.get(Direction.DownRight);
+    Node downLeftNode = nodeToRemove.get(Direction.DownLeft);
+    Node leftNode = nodeToRemove.get(Direction.Left);
+    Node upLeftNode = nodeToRemove.get(Direction.UpLeft);
+    Node upRightNode = nodeToRemove.get(Direction.UpRight);
     rightNode.set(null, Direction.Left);
     downRightNode.set(null, Direction.UpLeft);
     downLeftNode.set(null, Direction.UpRight);
     leftNode.set(null, Direction.Right);
     upLeftNode.set(null, Direction.DownRight);
     upRightNode.set(null, Direction.DownLeft);
-    nodes.remove(nodeId);
+    nodes.remove(nodeToRemove.getId());
+  }
+
+  public Node getRemovedNode() {
+    return removedNode;
   }
 
   private void checkLinksBackAndForth() {
