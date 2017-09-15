@@ -53,16 +53,16 @@ public class Molecule {
   public static final Molecule m10 = new Molecule("m10", m10Adjacencies, M10_BEAD_IDS, Orientation.Left, Direction.Right, Direction.DownRight, Direction.Right, Direction.UpRight);
   public static final Molecule m11 = new Molecule("m11", m11Adjacencies, Direction.Right, Direction.DownRight, Direction.Right, Direction.Back, Direction.DownLeft);
   public static final Molecule m12 = new Molecule("m12", m12Adjacencies, Orientation.AChiral, Direction.Right, Direction.Right, Direction.Right, Direction.Right);
-  public static final Molecule m13 = new Molecule("m13", m13Adjacencies, Orientation.AChiral, Direction.Right, Direction.DownRight, Direction.UpRight, Direction.Right);
-  public static final Molecule m14 = new Molecule("m14", m14Adjacencies, Orientation.AChiral, Direction.Right, Direction.Right, Direction.DownRight, Direction.DownRight);
-  public static final Molecule m15 = new Molecule("m15", m15Adjacencies, Orientation.AChiral, Direction.Right, Direction.DownRight, Direction.Right, Direction.DownRight);
-  public static final Molecule m16 = new Molecule("m16", m16Adjacencies, Orientation.AChiral, Direction.Right, Direction.Right, Direction.DownLeft, Direction.DownLeft);
-  public static final Molecule m17 = new Molecule("m17", m17Adjacencies, Orientation.AChiral, Direction.DownRight, Direction.Right, Direction.Right, Direction.UpRight);
-  public static final Molecule m18 = new Molecule("m18", m18Adjacencies, Orientation.AChiral, Direction.Right, Direction.DownRight, Direction.DownLeft, Direction.Left);
-  public static final Molecule m19 = new Molecule("m19", m19Adjacencies, Orientation.AChiral, Direction.Right, Direction.Right, Direction.DownRight, Direction.Back, Direction.UpRight);
-  public static final Molecule m20 = new Molecule("m20", m20Adjacencies, M20_BEAD_IDS, Orientation.AChiral, Direction.Right, Direction.UpRight, Direction.DownRight, Direction.DownLeft);
-  public static final Molecule m21 = new Molecule("m21", m21Adjacencies, Orientation.AChiral, Direction.DownRight, Direction.UpRight, Direction.DownRight, Direction.UpRight);
-  public static final Molecule m22 = new Molecule("m22", m22Adjacencies, M22_BEAD_IDS, Orientation.AChiral, Direction.DownRight, Direction.UpRight, Direction.UpRight, Direction.DownRight);
+  public static final Molecule m13 = new Molecule("m13", m13Adjacencies, Direction.Right, Direction.DownRight, Direction.UpRight, Direction.Right);
+  public static final Molecule m14 = new Molecule("m14", m14Adjacencies, Direction.Right, Direction.Right, Direction.DownRight, Direction.DownRight);
+  public static final Molecule m15 = new Molecule("m15", m15Adjacencies, Direction.Right, Direction.DownRight, Direction.Right, Direction.DownRight);
+  public static final Molecule m16 = new Molecule("m16", m16Adjacencies, Direction.Right, Direction.Right, Direction.DownLeft, Direction.DownLeft);
+  public static final Molecule m17 = new Molecule("m17", m17Adjacencies, Direction.DownRight, Direction.Right, Direction.Right, Direction.UpRight);
+  public static final Molecule m18 = new Molecule("m18", m18Adjacencies, Direction.Right, Direction.DownRight, Direction.DownLeft, Direction.Left);
+  public static final Molecule m19 = new Molecule("m19", m19Adjacencies, Direction.Right, Direction.Right, Direction.DownRight, Direction.Back, Direction.UpRight);
+  public static final Molecule m20 = new Molecule("m20", m20Adjacencies, M20_BEAD_IDS, Orientation.Left, Direction.Right, Direction.UpRight, Direction.DownRight, Direction.DownLeft);
+  public static final Molecule m21 = new Molecule("m21", m21Adjacencies, Direction.DownRight, Direction.UpRight, Direction.DownRight, Direction.UpRight);
+  public static final Molecule m22 = new Molecule("m22", m22Adjacencies, M22_BEAD_IDS, Orientation.Left, Direction.DownRight, Direction.UpRight, Direction.UpRight, Direction.DownRight);
 
   public static final Molecule hole = new Molecule("hole", holeAdjacencies, new int[] {0}, Orientation.Circular);
 
