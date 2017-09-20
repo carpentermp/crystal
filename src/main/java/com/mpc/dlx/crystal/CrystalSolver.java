@@ -22,6 +22,7 @@ public class CrystalSolver {
 
   private final Molecule rootMolecule;
   private final Crystal crystal;
+  private final int extraHoles;
   private final String[] columnNames;
   private final List<Molecule> molecules;
   final List<Row> rows;
@@ -30,12 +31,12 @@ public class CrystalSolver {
   private final Map<String, Set<CrystalResult>> resultMap = new HashMap<>();
   private final Map<String, Integer> resultDuplicationCounts = new HashMap<>();
   private boolean deduplicateResults;
-  private int extraHoles;
   private boolean doGZip;
 
-  public CrystalSolver(Molecule molecule, Crystal crystal) {
+  public CrystalSolver(Molecule molecule, Crystal crystal, int extraHoles) {
     this.rootMolecule = molecule;
     this.crystal = crystal;
+    this.extraHoles = extraHoles;
     this.columnNames = buildColumnNames(crystal, extraHoles);
     this.molecules = buildMolecules(molecule);
     this.rows = buildRows(molecules);
@@ -45,11 +46,6 @@ public class CrystalSolver {
 
   public CrystalSolver deduplicateResults(boolean deduplicateResults) {
     this.deduplicateResults = deduplicateResults;
-    return this;
-  }
-
-  public CrystalSolver extraHoles(int count) {
-    this.extraHoles = count;
     return this;
   }
 
@@ -301,9 +297,8 @@ public class CrystalSolver {
       try {
         String baseDir = Utils.addTrailingSlash(rootInputDir) + i + "/";
         crystal = new Crystal(baseDir);
-        new CrystalSolver(molecule, crystal)
+        new CrystalSolver(molecule, crystal, extraHoles)
           .deduplicateResults(deduplicateResults)
-          .extraHoles(extraHoles)
           .gZip(doGZip)
           .solve()
           .output(rootOutputDir);
@@ -413,6 +408,8 @@ public class CrystalSolver {
 //    solveCrystal("/Users/merlin/Downloads/textfiles/", null, Molecule.m05, 29, true, 0);
 //    solveCrystal("/Users/merlin/Downloads/textfiles/", null, Molecule.m12, 0, true, 0, false);
 //    solveCrystal("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m12, 10, true, 0, false);
+//    solveCrystal("/Users/carpentermp/Downloads/textfiles/", "/Users/carpentermp/Downloads/crystalResults", Molecule.m05, 189, true, 5, false);
+//    solveCrystal("/Users/carpentermp/Downloads/textfiles/", "/Users/carpentermp/Downloads/crystalResults", Molecule.m05, 189, true, 0, false);
   }
 
 }
