@@ -4,9 +4,6 @@ import au.id.bjf.dlx.DLX;
 import au.id.bjf.dlx.DLXResult;
 import au.id.bjf.dlx.DLXResultProcessor;
 import au.id.bjf.dlx.data.ColumnObject;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.mpc.dlx.crystal.result.UnitCellResults;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -14,11 +11,10 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@SuppressWarnings({"WeakerAccess", "squid:S106", "squid:HiddenFieldCheck"})
+@SuppressWarnings({"WeakerAccess", "squid:S106", "squid:HiddenFieldCheck", "unused", "FieldCanBeLocal"})
 public class CrystalSolver {
 
   private static final String HOLES_PREFIX = "h";
-  private static final Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
   private final Molecule rootMolecule;
   private final Crystal crystal;
@@ -196,10 +192,9 @@ public class CrystalSolver {
       return;
     }
     File moleculeDir = Utils.createSubDir(outputDir, rootMolecule.getName());
-    UnitCellResults results = new ResultsMapper(rootMolecule, crystal).map(resultMap, resultDuplicationCounts);
     String filename = Utils.addTrailingSlash(moleculeDir.getAbsolutePath()) + getFilenamePrefix() + ".json" + (doGZip ? ".gz" : "");
     try (BufferedWriter writer = Utils.getWriter(filename)) {
-      gson.toJson(results, writer);
+      new ResultsWriter(rootMolecule, crystal).write(resultMap, resultDuplicationCounts, writer);
     }
   }
 
@@ -264,6 +259,7 @@ public class CrystalSolver {
     return permute(matchingRowsInOrder, 0);
   }
 
+  @SuppressWarnings({"ConstantConditions", "TypeParameterExplicitlyExtendsObject"})
   static <T extends Object> List<List<T>> permute(List<List<T>> matchingRowsInOrder, int i) {
     List<T> matchingRows = matchingRowsInOrder.get(i);
     if (matchingRows == null) {
@@ -329,6 +325,7 @@ public class CrystalSolver {
     System.out.println("  -g             gzip output file(s)");
   }
 
+  @SuppressWarnings("ConstantConditions")
   private static void solveCrystalsWithArgs(String[] args) throws IOException {
     Molecule molecule = null;
     String inputDir = null;
@@ -394,19 +391,8 @@ public class CrystalSolver {
     solveCrystalsWithArgs(args);
 //    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 0, 390, true, 0, false);
 //    solveCrystals("/Users/merlin/Downloads/textfiles/", null, Molecule.m05, 390, 500, true, 0, false);
-//    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 0, 870, true, 0);
-//    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 897, 1031, true, 0);
-//    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 1089, 1206, true, 0);
-//    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 1376, 1415, true, 0);
-//    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 1519, 1646, true, 0);
-//    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 1741, 1832, true, 0);
-//    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 2002, 2015, true, 0);
-//    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 0, 500, true, 0);
+//    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 0, 10, true, 0, false);
 //    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 501, 561, true, 0);
-//    solveCrystal("/Users/merlin/Downloads/textfiles/", null, Molecule.m05, 1372, false, 0, false);
-//    solveCrystal("/Users/merlin/Downloads/textfiles/", null, Molecule.m05, 29, true, 5);
-//    solveCrystal("/Users/merlin/Downloads/textfiles/", null, Molecule.m05, 29, true, 0);
-//    solveCrystal("/Users/merlin/Downloads/textfiles/", null, Molecule.m12, 0, true, 0, false);
 //    solveCrystal("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m12, 10, true, 0, false);
 //    solveCrystal("/Users/carpentermp/Downloads/textfiles/", "/Users/carpentermp/Downloads/crystalResults", Molecule.m05, 189, true, 5, false);
 //    solveCrystal("/Users/carpentermp/Downloads/textfiles/", "/Users/carpentermp/Downloads/crystalResults", Molecule.m05, 189, true, 0, false);

@@ -1,34 +1,57 @@
 package com.mpc.dlx.crystal;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.mpc.dlx.crystal.result.RatioResults;
 import com.mpc.dlx.crystal.result.UnitCellResults;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("WeakerAccess")
-public class ResultsMapper {
+public class ResultsWriter {
+
+  private static final Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
 
   private final Molecule rootMolecule;
   private final Crystal crystal;
 
-  public ResultsMapper(Molecule molecule, Crystal crystal) {
+  public ResultsWriter(Molecule molecule, Crystal crystal) {
     this.rootMolecule = molecule;
     this.crystal = crystal;
   }
 
-  public UnitCellResults map(Map<String, Set<CrystalResult>> results, Map<String, Integer> resultDuplicationCounts) {
+  public void write(Map<String, Set<CrystalResult>> results, Map<String, Integer> resultDuplicationCounts, Writer writer) throws IOException {
     UnitCellResults unitCellResults = new UnitCellResults();
     unitCellResults.setMolecule(rootMolecule.getName());
     unitCellResults.setCrystal(crystal.getName());
     unitCellResults.setAdjacencyOrder(rootMolecule.getAdjacencyOrder());
     buildSitesAndCoordinates(unitCellResults);
     unitCellResults.setRatios(new ArrayList<>());
+
+    // write the beginning part
+    StringWriter buffer = new StringWriter();
+    gson.toJson(unitCellResults, buffer);
+    String unitCellStr = buffer.toString();
+    int index = unitCellStr.lastIndexOf(']');
+    writer.write(unitCellStr.substring(0, index));
+
+    // now write the ratios, one at a time
     List<String> ratios = results.keySet().stream().sorted().collect(Collectors.toList());
-    for (String ratio : ratios) {
-      unitCellResults.getRatios().add(mapRatioResults(unitCellResults.getSites(), ratio, results.get(ratio), resultDuplicationCounts));
+    for (int i = 0; i < ratios.size(); i++) {
+      String ratio = ratios.get(i);
+      RatioResults ratioResults = mapRatioResults(unitCellResults.getSites(), ratio, results.get(ratio), resultDuplicationCounts);
+      if (i != 0) {
+        writer.write(',');
+      }
+      gson.toJson(ratioResults, writer);
     }
-    return unitCellResults;
+
+    // now write the trailing part
+    writer.write(unitCellStr.substring(index));
   }
 
   private void buildSitesAndCoordinates(UnitCellResults unitCellResults) {
