@@ -203,7 +203,7 @@ public class CrystalResult {
     if (bucketName.equals(BUCKET_NAME_ALL)) {
       return partialTag;
     }
-    String oppositeTag = chiralOpposite(tag, rootMolecule.size());
+    String oppositeTag = chiralOpposite(partialTag, rootMolecule.size());
     return Stream.of(partialTag, oppositeTag)
       .sorted()
       .collect(Collectors.joining());
