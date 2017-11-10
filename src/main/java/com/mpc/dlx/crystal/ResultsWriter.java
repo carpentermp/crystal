@@ -82,6 +82,7 @@ public class ResultsWriter {
     if (resultDuplicateCounts != null) {
       ratioResults.setDuplicates(new ArrayList<>());
     }
+    ratioResults.setTags(new ArrayList<>());
     for (CrystalResult cResult : cResults) {
       ratioResults.getBeads().add(mapBeads(nodeIds, cResult));
       ratioResults.getAdjacencies().add(cResult.getAdjacencyCounts());
@@ -93,6 +94,7 @@ public class ResultsWriter {
         }
         ratioResults.getDuplicates().add(dupCount);
       }
+      ratioResults.getTags().add(cResult.getTag());
     }
     return ratioResults;
   }

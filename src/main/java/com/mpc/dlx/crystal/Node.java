@@ -74,4 +74,8 @@ public class Node {
     return Integer.hashCode(id);
   }
 
+  public String toString() {
+    return "node_" + id;
+  }
+
 }

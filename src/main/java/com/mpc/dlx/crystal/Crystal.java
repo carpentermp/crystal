@@ -11,11 +11,13 @@ public class Crystal {
 
   private static final String NEIGHBORS_FILENAME = "neighbors.txt";
   private static final String COORDINATES_FILENAME = "replicated_coordinates.txt";
+  private static final String NEIGHBORS_BY_ORIENTATION_FILENAME = "nbo.txt";
   private static final int DEFAULT_MOLECULE_SIZE = 5;
 
   private final String name;
   private final Map<Integer, Node> nodes = new HashMap<>();
   private final Map<Integer, List<Coordinate>> coordinates;
+  private final int[][] nbo;
   private int holeCount;
   private Node removedNode;
 
@@ -37,6 +39,7 @@ public class Crystal {
         this.holeCount = holeCount;
       }
       this.coordinates = readInCoordinates(baseDir);
+      this.nbo = readInNbo(baseDir);
       checkLinksBackAndForth();
     }
     catch (IOException e) {
@@ -108,6 +111,28 @@ public class Crystal {
     }
   }
 
+  private int[][] readInNbo(String baseDir) {
+    try {
+      String nboFilename = baseDir + NEIGHBORS_BY_ORIENTATION_FILENAME;
+      String line;
+      List<int[]> rtn = new ArrayList<>();
+      try (BufferedReader reader = new BufferedReader(new FileReader(nboFilename))) {
+        while ((line = reader.readLine()) != null) {
+          String[] parts = line.split(" ");
+          int[] ints = new int[parts.length];
+          for (int i = 0; i < ints.length; i++) {
+            ints[i] = Integer.parseInt(parts[i]);
+          }
+          rtn.add(ints);
+        }
+      }
+      return rtn.toArray(new int[rtn.size()][]);
+    }
+    catch (Exception e) {
+      return null;
+    }
+  }
+
   private Map<Integer, List<String>> readInConnections(String baseDir) throws IOException {
     String neighborsFile = baseDir + NEIGHBORS_FILENAME;
     String line;
@@ -173,6 +198,10 @@ public class Crystal {
 
   public List<Coordinate> getCoordinates(int nodeId) {
     return coordinates.get(nodeId);
+  }
+
+  public int[][] getNeighborsByOrientation() {
+    return nbo;
   }
 
   public static void main(String[] args) {

@@ -10,6 +10,7 @@ public class RatioResults {
   private List<List<Integer>> adjacencies;
   private List<List<Integer>> placements;
   private List<Integer> duplicates;
+  private List<String> tags;
 
   public String getRatio() {
     return ratio;
@@ -49,6 +50,14 @@ public class RatioResults {
 
   public void setDuplicates(List<Integer> duplicates) {
     this.duplicates = duplicates;
+  }
+
+  public List<String> getTags() {
+    return tags;
+  }
+
+  public void setTags(List<String> tags) {
+    this.tags = tags;
   }
 
 }

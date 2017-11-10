@@ -4,6 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.*;
@@ -40,7 +41,8 @@ public class TestCrystalResult {
 
   @Test
   public void testBuildAdjacencyCountMap() {
-    Map<String, Integer> map = CrystalResult.buildAdjacencyCountMap(c1372, Collections.singletonList(row));
+    List<Row> rows = Collections.singletonList(row);
+    Map<String, Integer> map = CrystalResult.buildAdjacencyCountMap(CrystalResult.buildNodeToBeadIdMap(c1372, rows, false));
     assertEquals(1, map.get("1-2").intValue());
     assertEquals(1, map.get("1-4").intValue());
     assertEquals(1, map.get("2-3").intValue());

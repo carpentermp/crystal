@@ -1,15 +1,20 @@
 package com.mpc.dlx.crystal;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @SuppressWarnings({"WeakerAccess", "squid:S1640", "squid:HiddenFieldCheck"})
 public class CrystalResult {
+
+  private static final String BUCKET_NAME_ALL = "all";
 
   private final Crystal crystal;
   private final Molecule rootMolecule;
   private final List<Row> rows;
   private final String bucketName;
   private final List<Integer> adjacencyCounts;
+  private final String tag;
   private final boolean deduplicateResults;
   private final String equalsString;
 
@@ -19,9 +24,11 @@ public class CrystalResult {
     this.deduplicateResults = deduplicateResults;
     this.rows = rows;
     this.bucketName = buildBucketName();
-    this.adjacencyCounts = computeAdjacencyCounts();
+    Map<Node, Integer> nodeToBeadIdMap = buildNodeToBeadIdMap(crystal, rows, false);
+    this.adjacencyCounts = computeAdjacencyCounts(nodeToBeadIdMap);
+    this.tag = computeTag(nodeToBeadIdMap);
     // compute this once for performance
-    this.equalsString = crystal.getName() + "_" + rootMolecule.getName() + "_" + getBucketName() + ": " + Utils.join(adjacencyCounts, ", ");
+    this.equalsString = crystal.getName() + "_" + rootMolecule.getName() + "_" + getBucketName() + ": " + adjacencyCounts + ", tag: " + tag;
   }
 
   public String getBucketName() {
@@ -32,12 +39,16 @@ public class CrystalResult {
     return Collections.unmodifiableList(rows);
   }
 
+  public String getTag() {
+    return tag;
+  }
+
   private String buildBucketName() {
     Map<Orientation, Integer> orientationCounts = countOrientations(rows);
     int leftCount = getCountOfOrientation(orientationCounts, Orientation.Left);
     int rightCount = getCountOfOrientation(orientationCounts, Orientation.Right);
     if (leftCount + rightCount == 0) {
-      return "all";
+      return BUCKET_NAME_ALL;
     }
     return String.format("l%1$02dr%2$02d", leftCount, rightCount);
   }
@@ -65,8 +76,8 @@ public class CrystalResult {
    *
    * @return an ordered list of counts for the adjacencies between different beads
    */
-  private List<Integer> computeAdjacencyCounts() {
-    Map<String, Integer> adjacencyCountMap = buildAdjacencyCountMap(crystal, rows);
+  private List<Integer> computeAdjacencyCounts(Map<Node, Integer> nodeToBeadIdMap) {
+    Map<String, Integer> adjacencyCountMap = buildAdjacencyCountMap(nodeToBeadIdMap);
     for (Row row : rows) {
       if (!row.isHole()) {
         // subtract the counts for adjacencies within the molecules--they don't count
@@ -86,8 +97,12 @@ public class CrystalResult {
     return adjacencyCounts;
   }
 
-  static Map<String, Integer> buildAdjacencyCountMap(Crystal crystal, List<Row> rows) {
-    Map<Node, Integer> nodeToBeadIdMap = buildNodeToBeadIdMap(crystal, rows, false);
+  /**
+   * build a map of adjacencyName e.g. "1-1" to count at that adjacency
+   * @param nodeToBeadIdMap map of nodes to the type of bead at that node (nodes without a bead in them i.e. holes are not in map)
+   * @return the map of adjacencyName e.g. "1-1" to count at that adjacency
+   */
+  static Map<String, Integer> buildAdjacencyCountMap(Map<Node, Integer> nodeToBeadIdMap) {
     Map<String, Integer> adjacencyMap = new HashMap<>();
     for (Node node : nodeToBeadIdMap.keySet()) {
       for (int i = 1; i <= 6; i++) {
@@ -104,6 +119,7 @@ public class CrystalResult {
     return adjacencyMap;
   }
 
+  // count an adjacency at a paticular location in a particular direction
   private static void addAdjacency(Node node, Direction direction, Map<Node, Integer> nodeToBeadIdMap, Map<String, Integer> adjacencyCounts) {
     Node otherNode = node.get(direction);
     if (otherNode == null) {
@@ -174,6 +190,60 @@ public class CrystalResult {
       return super.hashCode();
     }
     return toString().hashCode();
+  }
+
+  private String computeTag(Map<Node, Integer> nodeToBeadIdMap) {
+    String partialTag = getTrackList(nodeToBeadIdMap)
+      .stream()
+      .map(Utils::smallestSubstring)
+      .map(Utils::rotateOptimally)
+      .distinct()
+      .sorted()
+      .collect(Collectors.joining());
+    if (bucketName.equals(BUCKET_NAME_ALL)) {
+      return partialTag;
+    }
+    String oppositeTag = chiralOpposite(tag, rootMolecule.size());
+    return Stream.of(partialTag, oppositeTag)
+      .sorted()
+      .collect(Collectors.joining());
+  }
+
+  private static String chiralOpposite(String s, int moleculeSize) {
+    StringBuilder sb = new StringBuilder();
+    s.chars().forEach(ch -> sb.append(CrystalResult.chiralOpposite(ch, moleculeSize)));
+    return sb.toString();
+  }
+
+  private static char chiralOpposite(int ch, int moleculeSize) {
+    int beadId = ch - 'a';
+    if (beadId == 0)
+      return (char) ch;
+    if (beadId > moleculeSize) {
+      return (char) ('a' + (beadId - moleculeSize));
+    }
+    return (char) ('a' + beadId + moleculeSize);
+  }
+
+  private List<String> getTrackList(Map<Node, Integer> nodeToBeadIdMap) {
+    int[][] nbo = crystal.getNeighborsByOrientation();
+    List<String> trackList = new ArrayList<>();
+    if (nbo == null) {
+      return Collections.emptyList();
+    }
+    int width = nbo[0].length;
+    int height = nbo.length - 2;
+    for (int i = 0; i < width; i++) {
+      StringBuilder sb = new StringBuilder();
+      for (int j = 0; j < height; j++) {
+        Node node = crystal.getNode(nbo[j + 1][i]);
+        // if node is null, it's a hole
+        Integer beadId = node == null ? 0 : nodeToBeadIdMap.get(node);
+        sb.append((char) ('a' + (beadId == null ? 0 : beadId)));
+      }
+      trackList.add(sb.toString());
+    }
+    return trackList;
   }
 
 }

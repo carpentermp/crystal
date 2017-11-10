@@ -3,6 +3,9 @@ package com.mpc.dlx.crystal;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * represents a candidate for placement of a molecule in the crystal
+ */
 @SuppressWarnings({"WeakerAccess", "squid:S1168"})
 public class Row {
 
@@ -12,6 +15,12 @@ public class Row {
   private final Integer holeIndex;
   private final String key;
 
+  /**
+   * normal constructor for a candidate placement of a molecule at a specific lattice site
+   * @param nodeId the starting "node id" of the lattice site where the molecule was placed
+   * @param molecule the molecule that was placed there
+   * @param usedIds all the column indexes of the lattice sites take by the placement of the molecule in the given place
+   */
   public Row(int nodeId, Molecule molecule, Set<Integer> usedIds) {
     this.nodeId = nodeId;
     this.molecule = molecule;
@@ -27,6 +36,11 @@ public class Row {
     return Utils.join(usedIds.stream().sorted().collect(Collectors.toList()), "-");
   }
 
+  /**
+   * constructor used to create potential "holes" in the result
+   * @param holeNodeId the node id of the hole
+   * @param holeIndex the "index" of the hole (to distinguish the hole from other holes)
+   */
   public Row(int holeNodeId, int holeIndex) {
     this.nodeId = holeNodeId;
     this.molecule = Molecule.hole;
