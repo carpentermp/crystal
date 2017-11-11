@@ -5,8 +5,6 @@ import au.id.bjf.dlx.DLXResult;
 import au.id.bjf.dlx.DLXResultProcessor;
 import au.id.bjf.dlx.data.ColumnObject;
 
-import java.io.BufferedWriter;
-import java.io.File;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -24,12 +22,9 @@ public class CrystalSolver {
   final List<Row> rows;
   private final Map<String, List<Row>> rowKeyToRows;
   final byte[][] matrix;
-  private final Map<String, Set<CrystalResult>> resultMap = new HashMap<>();
-  private final Map<String, Integer> resultDuplicationCounts = new HashMap<>();
-  private boolean deduplicateResults;
-  private boolean doGZip;
+  private final CrystalResults results;
 
-  public CrystalSolver(Molecule molecule, Crystal crystal, int extraHoles) {
+  public CrystalSolver(Molecule molecule, Crystal crystal, int extraHoles, boolean doGZip, boolean dedup, String rootOutputDir) {
     this.rootMolecule = molecule;
     this.crystal = crystal;
     this.extraHoles = extraHoles;
@@ -38,16 +33,7 @@ public class CrystalSolver {
     this.rows = buildRows(molecules);
     this.rowKeyToRows = buildRowKeyToRows(this.rows);
     this.matrix = buildMatrix(rows);
-  }
-
-  public CrystalSolver deduplicateResults(boolean deduplicateResults) {
-    this.deduplicateResults = deduplicateResults;
-    return this;
-  }
-
-  public CrystalSolver gZip(boolean doGZip) {
-    this.doGZip = doGZip;
-    return this;
+    this.results = new CrystalResults(molecule, crystal, extraHoles, rootOutputDir, dedup, doGZip);
   }
 
   static String[] buildColumnNames(Crystal crystal, int extraHoles) {
@@ -113,10 +99,10 @@ public class CrystalSolver {
     }
     if (hadDupRow) {
       List<Integer> sizes = rowKeyToRows.values()
-          .stream()
-          .map(List::size)
-          .filter(s -> s > 1)
-          .collect(Collectors.toList());
+        .stream()
+        .map(List::size)
+        .filter(s -> s > 1)
+        .collect(Collectors.toList());
       System.out.println("Crystal " + crystal.getName() + " had duplicate rows! " + Utils.join(sizes, "-"));
     }
     return rowKeyToRows;
@@ -142,17 +128,17 @@ public class CrystalSolver {
   private byte[][] buildMatrix(List<Row> rows) {
     Set<String> rowKeysSeenSoFar = new HashSet<>();
     List<Row> uniqueRows = rows.stream()
-        .filter(r -> {
-          if (r.isHole()) {
-            return true;
-          }
-          if (rowKeysSeenSoFar.contains(r.getKey())) {
-            return false;
-          }
-          rowKeysSeenSoFar.add(r.getKey());
+      .filter(r -> {
+        if (r.isHole()) {
           return true;
-        })
-        .collect(Collectors.toList());
+        }
+        if (rowKeysSeenSoFar.contains(r.getKey())) {
+          return false;
+        }
+        rowKeysSeenSoFar.add(r.getKey());
+        return true;
+      })
+      .collect(Collectors.toList());
     byte[][] matrix = new byte[uniqueRows.size()][];
     for (int i = 0; i < matrix.length; i++) {
       matrix[i] = uniqueRows.get(i).getBytes(columnNames);
@@ -166,64 +152,22 @@ public class CrystalSolver {
     }
   }
 
-  private String getFilenamePrefix() {
-    return crystal.getName() + "-" + rootMolecule.getName() + (extraHoles > 0 ? "-h" + extraHoles : "");
-  }
-
   public CrystalSolver solve() {
     CrystalResultProcessor resultProcessor = new CrystalResultProcessor();
     if (matrix.length > 0) {
       ColumnObject h = DLX.buildSparseMatrix(matrix, columnNames);
       DLX.solve(h, true, resultProcessor);
     }
-    System.out.println("For " + getFilenamePrefix() + " there were " + resultProcessor.getCount() + " results!");
-    for (Map.Entry<String, Set<CrystalResult>> entry : resultMap.entrySet()) {
-      System.out.println(entry.getKey() + ": " + entry.getValue().size());
-//      for (CrystalResult result : entry.getValue()) {
-//        System.out.println("Adjacencies: " + result.getAdjacencyCounts());
-//      }
-    }
-    System.out.println();
+    results.done();
     return this;
-  }
-
-  public void output(String outputDir) throws IOException {
-    if (outputDir == null) {
-      return;
-    }
-    File moleculeDir = Utils.createSubDir(outputDir, rootMolecule.getName());
-    String filename = Utils.addTrailingSlash(moleculeDir.getAbsolutePath()) + getFilenamePrefix() + ".json" + (doGZip ? ".gz" : "");
-    try (BufferedWriter writer = Utils.getWriter(filename)) {
-      new ResultsWriter(rootMolecule, crystal).write(resultMap, resultDuplicationCounts, writer);
-    }
   }
 
   public class CrystalResultProcessor implements DLXResultProcessor {
 
-    private int count = 0;
-
     public boolean processResult(DLXResult dlxResult) {
       List<List<Row>> rowSets = convertResultToRowSets(dlxResult);
-      rowSets.forEach(rowSet -> {
-        CrystalResult result = new CrystalResult(crystal, rootMolecule, rowSet, deduplicateResults);
-        Set<CrystalResult> results = resultMap.computeIfAbsent(result.getBucketName(), k -> new HashSet<>());
-        if (deduplicateResults && results.contains(result)) {
-          Integer count = resultDuplicationCounts.get(result.toString());
-          if (count == null) {
-            count = 1;
-          }
-          resultDuplicationCounts.put(result.toString(), ++count);
-        }
-        else {
-          results.add(result);
-          count++;
-        }
-      });
+      rowSets.forEach(results::addResult);
       return true; // keep going
-    }
-
-    public int getCount() {
-      return count;
     }
 
   }
@@ -234,20 +178,20 @@ public class CrystalSolver {
     while (it.hasNext()) {
       List<Object> objects = it.next();
       List<Integer> usedIds = objects
-          .stream()
-          .map(String::valueOf)
-          .filter(s -> Character.isDigit(s.charAt(0)))
-          .map(Integer::parseInt)
-          .collect(Collectors.toList());
+        .stream()
+        .map(String::valueOf)
+        .filter(s -> Character.isDigit(s.charAt(0)))
+        .map(Integer::parseInt)
+        .collect(Collectors.toList());
       String rowKey;
       Integer holeIndex = null;
       if (usedIds.size() == 1) {
         holeIndex = objects.stream()
-            .map(Object::toString)
-            .filter(s -> !Character.isDigit(s.charAt(0)))
-            .map(s -> Integer.parseInt(s.substring(1)))
-            .findAny()
-            .orElse(99);
+          .map(Object::toString)
+          .filter(s -> !Character.isDigit(s.charAt(0)))
+          .map(s -> Integer.parseInt(s.substring(1)))
+          .findAny()
+          .orElse(99);
       }
       rowKey = Row.buildKey(usedIds, holeIndex);
       List<Row> rowsWithRowKey = rowKeyToRows.get(rowKey);
@@ -281,9 +225,9 @@ public class CrystalSolver {
     }
     else {
       return matchingRows
-          .stream()
-          .map(r -> new ArrayList<>(Collections.singletonList(r)))
-          .collect(Collectors.toList());
+        .stream()
+        .map(r -> new ArrayList<>(Collections.singletonList(r)))
+        .collect(Collectors.toList());
     }
   }
 
@@ -293,11 +237,7 @@ public class CrystalSolver {
       try {
         String baseDir = Utils.addTrailingSlash(rootInputDir) + i + "/";
         crystal = new Crystal(baseDir);
-        new CrystalSolver(molecule, crystal, extraHoles)
-          .deduplicateResults(deduplicateResults)
-          .gZip(doGZip)
-          .solve()
-          .output(rootOutputDir);
+        new CrystalSolver(molecule, crystal, extraHoles, doGZip, deduplicateResults, rootOutputDir).solve();
       }
       catch (RuntimeException e) {
         System.out.println("Failure solving crystal c" + i + "-" + molecule.getName() + " because of: " + e.getClass() + ": " + e.getLocalizedMessage());
@@ -389,11 +329,12 @@ public class CrystalSolver {
 
   public static void main(String[] args) throws IOException {
 //    solveCrystalsWithArgs(args);
-//    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 0, 390, true, 0, false);
-//    solveCrystals("/Users/merlin/Downloads/textfiles/", null, Molecule.m05, 390, 500, true, 0, false);
+    solveCrystals("/Users/merlin/Downloads/textfiles2/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 0, 390, true, 0, true);
+//    solveCrystals("/Users/merlin/Downloads/textfiles2/", null, Molecule.m05, 390, 500, true, 0, false);
 //    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 0, 10, true, 0, false);
 //    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 501, 561, true, 0);
-    solveCrystal("/Users/merlin/Downloads/textfiles2/", "/Users/merlin/Downloads/crystalResults", Molecule.m12, 10, true, 0, false);
+//    solveCrystal("/Users/merlin/Downloads/textfiles2/", "/Users/merlin/Downloads/crystalResults", Molecule.m12, 10, true, 0, false);
+//    solveCrystal("/Users/merlin/Downloads/textfiles2/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 378, false, 0, false);
 //    solveCrystal("/Users/carpentermp/Downloads/textfiles/", "/Users/carpentermp/Downloads/crystalResults", Molecule.m05, 189, true, 5, false);
 //    solveCrystal("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 189, true, 0, false);
   }

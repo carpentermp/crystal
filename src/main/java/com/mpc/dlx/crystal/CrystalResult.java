@@ -15,20 +15,17 @@ public class CrystalResult {
   private final String bucketName;
   private final List<Integer> adjacencyCounts;
   private final String tag;
-  private final boolean deduplicateResults;
-  private final String equalsString;
+  private final ResultEquality equality;
 
-  public CrystalResult(Crystal crystal, Molecule rootMolecule, List<Row> rows, boolean deduplicateResults) {
+  public CrystalResult(Crystal crystal, Molecule rootMolecule, List<Row> rows) {
     this.crystal = crystal;
     this.rootMolecule = rootMolecule;
-    this.deduplicateResults = deduplicateResults;
     this.rows = rows;
     this.bucketName = buildBucketName();
     Map<Node, Integer> nodeToBeadIdMap = buildNodeToBeadIdMap(crystal, rows, false);
     this.adjacencyCounts = computeAdjacencyCounts(nodeToBeadIdMap);
     this.tag = computeTag(nodeToBeadIdMap);
-    // compute this once for performance
-    this.equalsString = crystal.getName() + "_" + rootMolecule.getName() + "_" + getBucketName() + ": " + adjacencyCounts + ", tag: " + tag;
+    this.equality = computeEquality();
   }
 
   public String getBucketName() {
@@ -99,6 +96,7 @@ public class CrystalResult {
 
   /**
    * build a map of adjacencyName e.g. "1-1" to count at that adjacency
+   *
    * @param nodeToBeadIdMap map of nodes to the type of bead at that node (nodes without a bead in them i.e. holes are not in map)
    * @return the map of adjacencyName e.g. "1-1" to count at that adjacency
    */
@@ -171,25 +169,23 @@ public class CrystalResult {
   }
 
   public String toString() {
-    return equalsString;
+    return crystal.getName() + "_" + rootMolecule.getName() + "_" + getBucketName() + ": " + adjacencyCounts + ", tag: " + tag;
+  }
+
+  public ResultEquality getEquality() {
+    return equality;
   }
 
   public boolean equals(Object obj) {
-    if (!deduplicateResults) {
-      return super.equals(obj);
-    }
     if (obj == null || !(obj instanceof CrystalResult)) {
       return false;
     }
     CrystalResult other = (CrystalResult) obj;
-    return toString().equals(other.toString());
+    return equality.equals(other.getEquality());
   }
 
   public int hashCode() {
-    if (!deduplicateResults) {
-      return super.hashCode();
-    }
-    return toString().hashCode();
+    return equality.hashCode();
   }
 
   private String computeTag(Map<Node, Integer> nodeToBeadIdMap) {
@@ -217,8 +213,9 @@ public class CrystalResult {
 
   private static char chiralOpposite(int ch, int moleculeSize) {
     int beadId = ch - 'a';
-    if (beadId == 0)
+    if (beadId == 0) {
       return (char) ch;
+    }
     if (beadId > moleculeSize) {
       return (char) ('a' + (beadId - moleculeSize));
     }
@@ -244,6 +241,27 @@ public class CrystalResult {
       trackList.add(sb.toString());
     }
     return trackList;
+  }
+
+  private ResultEquality computeEquality() {
+    List<Byte> bytes = new ArrayList<>();
+    adjacencyCounts.forEach(count -> bytes.add((byte) (count & 0xFF)));
+    for (int i = 0; i < tag.length(); i += 2) {
+      char ch2 = (i + 1 >= tag.length()) ? (char) ('a' + rootMolecule.size() * 2 + 1) : tag.charAt(i + 1);
+      bytes.add(nibbleIt(tag.charAt(i), ch2));
+    }
+    byte[] rtn = new byte[bytes.size()];
+    for (int i = 0; i < rtn.length; i++) {
+      rtn[i] = bytes.get(i);
+    }
+    return new ResultEquality(rtn);
+  }
+
+  private byte nibbleIt(char ch1, char ch2) {
+    int offset1 = ch1 - 'a';
+    int offset2 = ch2 - 'a';
+    int combined = (offset1 << 4) + offset2;
+    return (byte) (combined & 0xFF);
   }
 
 }
