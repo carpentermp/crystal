@@ -22,9 +22,8 @@ public class CrystalResult {
     this.rootMolecule = rootMolecule;
     this.rows = rows;
     this.bucketName = buildBucketName();
-    Map<Node, Integer> nodeToBeadIdMap = buildNodeToBeadIdMap(crystal, rows, false);
-    this.adjacencyCounts = computeAdjacencyCounts(nodeToBeadIdMap);
-    this.tag = computeTag(nodeToBeadIdMap);
+    this.adjacencyCounts = computeAdjacencyCounts(buildNodeToBeadIdMap(crystal, rows, false));
+    this.tag = computeTag(buildNodeToBeadIdMap(crystal, rows, true));
     this.equality = computeEquality();
   }
 
@@ -189,20 +188,24 @@ public class CrystalResult {
   }
 
   private String computeTag(Map<Node, Integer> nodeToBeadIdMap) {
-    String partialTag = getTrackList(nodeToBeadIdMap)
-      .stream()
+    List<String> regularTracks = getTrackList(nodeToBeadIdMap).stream()
       .map(Utils::smallestSubstring)
       .map(Utils::rotateOptimally)
       .distinct()
+      .collect(Collectors.toList());
+    List<String> chiralOppositeTracks = regularTracks
+      .stream()
+      .map(s -> chiralOpposite(s, rootMolecule.size()))
+      .collect(Collectors.toList());
+    String partialTag = regularTracks.stream()
       .sorted()
       .collect(Collectors.joining());
-    if (bucketName.equals(BUCKET_NAME_ALL)) {
-      return partialTag;
-    }
-    String oppositeTag = chiralOpposite(partialTag, rootMolecule.size());
-    return Stream.of(partialTag, oppositeTag)
+    String chiralPartial = chiralOppositeTracks.stream()
       .sorted()
       .collect(Collectors.joining());
+    String tag = Stream.of(partialTag, chiralPartial).sorted().collect(Collectors.joining());
+//    System.out.println(tag);
+    return tag;
   }
 
   private static String chiralOpposite(String s, int moleculeSize) {
