@@ -203,9 +203,7 @@ public class CrystalResult {
     String chiralPartial = chiralOppositeTracks.stream()
       .sorted()
       .collect(Collectors.joining());
-    String tag = Stream.of(partialTag, chiralPartial).sorted().collect(Collectors.joining());
-//    System.out.println(tag);
-    return tag;
+    return Stream.of(partialTag, chiralPartial).sorted().collect(Collectors.joining());
   }
 
   private static String chiralOpposite(String s, int moleculeSize) {
