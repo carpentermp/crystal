@@ -328,12 +328,12 @@ public class CrystalSolver {
   }
 
   public static void main(String[] args) throws IOException {
-//    solveCrystalsWithArgs(args);
+    solveCrystalsWithArgs(args);
 //    solveCrystals("/Users/merlin/Downloads/textfiles2/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 0, 390, true, 0, true);
 //    solveCrystals("/Users/merlin/Downloads/textfiles2/", null, Molecule.m05, 390, 500, true, 0, false);
 //    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 0, 10, true, 0, false);
 //    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 501, 561, true, 0);
-    solveCrystal("/Users/merlin/Downloads/textfiles2/", "/Users/merlin/Downloads/crystalResults", Molecule.m09, 55, false, 0, false);
+//    solveCrystal("/Users/merlin/Downloads/textfiles2/", "/Users/merlin/Downloads/crystalResults", Molecule.m09, 55, false, 0, false);
 //    solveCrystal("/Users/merlin/Downloads/textfiles2/", "/Users/merlin/Downloads/crystalResults", Molecule.m12, 10, true, 0, false);
 //    solveCrystal("/Users/merlin/Downloads/textfiles2/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 378, false, 0, false);
 //    solveCrystal("/Users/carpentermp/Downloads/textfiles/", "/Users/carpentermp/Downloads/crystalResults", Molecule.m05, 189, true, 5, false);
