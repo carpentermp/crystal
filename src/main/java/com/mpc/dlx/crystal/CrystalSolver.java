@@ -23,17 +23,21 @@ public class CrystalSolver {
   private final Map<String, List<Row>> rowKeyToRows;
   final byte[][] matrix;
   private final CrystalResults results;
+  private final long quitTime;
+  private final long maxSolutionCount;
 
-  public CrystalSolver(Molecule molecule, Crystal crystal, int extraHoles, boolean doGZip, boolean dedup, String rootOutputDir) {
-    this.rootMolecule = molecule;
+  public CrystalSolver(SolverParms parms, Crystal crystal) {
+    this.rootMolecule = parms.getMolecule();
     this.crystal = crystal;
-    this.extraHoles = extraHoles;
+    this.extraHoles = parms.getExtraHoles();
     this.columnNames = buildColumnNames(crystal, extraHoles);
-    this.molecules = buildMolecules(molecule);
+    this.molecules = buildMolecules(rootMolecule);
     this.rows = buildRows(molecules);
     this.rowKeyToRows = buildRowKeyToRows(this.rows);
     this.matrix = buildMatrix(rows);
-    this.results = new CrystalResults(molecule, crystal, extraHoles, rootOutputDir, dedup, doGZip);
+    this.results = new CrystalResults(rootMolecule, crystal, extraHoles, parms.getOutputDir(), parms.isDedup(), parms.isDoGZip());
+    this.quitTime = parms.getQuitTime();
+    this.maxSolutionCount = parms.getMaxSolutionCount();
   }
 
   static String[] buildColumnNames(Crystal crystal, int extraHoles) {
@@ -120,7 +124,6 @@ public class CrystalSolver {
     if (usedIds.size() != rootMolecule.size()) {
       // for small unit cells, the molecules wrap around on them themselves
       return null;
-//      throw new IllegalArgumentException("Bogus used ids set!");
     }
     return new Row(nodeId, molecule, usedIds);
   }
@@ -153,21 +156,32 @@ public class CrystalSolver {
   }
 
   public CrystalSolver solve() {
-    CrystalResultProcessor resultProcessor = new CrystalResultProcessor();
-    if (matrix.length > 0) {
-      ColumnObject h = DLX.buildSparseMatrix(matrix, columnNames);
-      DLX.solve(h, true, resultProcessor);
+    try {
+      CrystalResultProcessor resultProcessor = new CrystalResultProcessor();
+      if (matrix.length > 0) {
+        ColumnObject h = DLX.buildSparseMatrix(matrix, columnNames);
+        DLX.solve(h, true, resultProcessor);
+      }
     }
-    results.done();
+    finally {
+      results.done();
+    }
     return this;
   }
 
   public class CrystalResultProcessor implements DLXResultProcessor {
 
+    int lastOutput = 0;
+
     public boolean processResult(DLXResult dlxResult) {
       List<List<Row>> rowSets = convertResultToRowSets(dlxResult);
       rowSets.forEach(results::addResult);
-      return true; // keep going
+      if (results.size() != lastOutput && results.size() % 100 == 0) {
+        System.out.println("results=" + results.size());
+        lastOutput = results.size();
+      }
+      // keep going unless it's time to quit
+      return results.size() < maxSolutionCount && System.currentTimeMillis() < quitTime;
     }
 
   }
@@ -231,16 +245,16 @@ public class CrystalSolver {
     }
   }
 
-  private static void solveCrystals(String rootInputDir, String rootOutputDir, Molecule molecule, int start, int end, boolean deduplicateResults, int extraHoles, boolean doGZip) throws IOException {
-    for (int i = start; i <= end; i++) {
+  private static void solveCrystals(SolverParms parms) throws IOException {
+    for (int i = parms.getStartingCrystal(); i <= parms.getEndingCrystal(); i++) {
       Crystal crystal;
       try {
-        String baseDir = Utils.addTrailingSlash(rootInputDir) + i + "/";
+        String baseDir = Utils.addTrailingSlash(parms.getInputDir()) + i + "/";
         crystal = new Crystal(baseDir);
-        new CrystalSolver(molecule, crystal, extraHoles, doGZip, deduplicateResults, rootOutputDir).solve();
+        new CrystalSolver(parms, crystal).solve();
       }
       catch (RuntimeException e) {
-        System.out.println("Failure solving crystal c" + i + "-" + molecule.getName() + " because of: " + e.getClass() + ": " + e.getLocalizedMessage());
+        System.out.println("Failure solving crystal c" + i + "-" + parms.getMolecule().getName() + " because of: " + e.getClass() + ": " + e.getLocalizedMessage());
         if (!(e instanceof IllegalArgumentException)) {
           e.printStackTrace();
         }
@@ -248,96 +262,20 @@ public class CrystalSolver {
     }
   }
 
-  private static void solveCrystal(String rootInputDir, String rootOutputDir, Molecule molecule, int crystalId, boolean deduplicateResults, int extraHoleCount, boolean doGZip) throws IOException {
-    solveCrystals(rootInputDir, rootOutputDir, molecule, crystalId, crystalId, deduplicateResults, extraHoleCount, doGZip);
-  }
-
-  private static void usage() {
-    System.out.println("Usage: java -jar crystal.jar [options] moleculeNumber inputDir");
-    System.out.println("  moleculeNumber must be between 1 and 22");
-    System.out.println("  inputDir points to parent directory where all crystal information is stored");
-    System.out.println("  Options:");
-    System.out.println("  -o dir         output directory (no output if not specified)");
-    System.out.println("  -s num         starting crystal number (0 if not specified)");
-    System.out.println("  -e num         ending crystal number (same as starting number if not specified)");
-    System.out.println("  -d             don't deduplicate results");
-    System.out.println("  -h num         count of extra holes (must be multiple of molecule size)");
-    System.out.println("  -g             gzip output file(s)");
-  }
-
-  @SuppressWarnings("ConstantConditions")
-  private static void solveCrystalsWithArgs(String[] args) throws IOException {
-    Molecule molecule = null;
-    String inputDir = null;
-    String outputDir = null;
-    int startingCrystal = 0;
-    int endingCrystal = 0;
-    boolean deduplicateResults = true;
-    int extraHoles = 0;
-    boolean doGZip = false;
-    try {
-      for (int i = 0; i < args.length; i++) {
-        String arg = args[i];
-        switch (arg) {
-          case "-o":
-            outputDir = args[++i];
-            break;
-          case "-s":
-            startingCrystal = Integer.parseInt(args[++i]);
-            if (endingCrystal == 0) {
-              endingCrystal = startingCrystal;
-            }
-            break;
-          case "-e":
-            endingCrystal = Integer.parseInt(args[++i]);
-            break;
-          case "-d":
-            deduplicateResults = false;
-            break;
-          case "-h":
-            extraHoles = Integer.parseInt(args[++i]);
-            break;
-          case "-g":
-            doGZip = true;
-            break;
-          default:
-            if (molecule == null) {
-              molecule = Molecule.fromNumber(Integer.parseInt(arg));
-            }
-            else {
-              inputDir = arg;
-            }
-            break;
-        }
-      }
-      if (molecule == null) {
-        throw new IllegalArgumentException("Molecule must be specified.");
-      }
-      if (inputDir == null) {
-        throw new IllegalArgumentException("Input directory must be specified.");
-      }
-      if ((extraHoles % molecule.size()) != 0) {
-        throw new IllegalArgumentException("Hole count must be multiple of molecule size");
-      }
-      solveCrystals(inputDir, outputDir, molecule, startingCrystal, endingCrystal, deduplicateResults, extraHoles, doGZip);
-    }
-    catch (RuntimeException e) {
-      System.out.println("\nError: " + e.getMessage() + "\n");
-      usage();
-    }
-  }
+  private static final SolverParms DEFAULT_PARMS = new SolverParms("5", "/Users/merlin/Downloads/textfiles2/")
+                    .outputDir("/Users/merlin/Downloads/crystalResults");
 
   public static void main(String[] args) throws IOException {
-//    solveCrystalsWithArgs(args);
-//    solveCrystals("/Users/merlin/Downloads/textfiles2/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 0, 390, true, 0, true);
-//    solveCrystals("/Users/merlin/Downloads/textfiles2/", null, Molecule.m05, 390, 500, true, 0, false);
-//    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 0, 10, true, 0, false);
-//    solveCrystals("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 501, 561, true, 0);
-    solveCrystal("/Users/merlin/Downloads/textfiles2/", "/Users/merlin/Downloads/crystalResults", Molecule.m09, 55, false, 0, false);
-//    solveCrystal("/Users/merlin/Downloads/textfiles2/", "/Users/merlin/Downloads/crystalResults", Molecule.m12, 10, true, 0, false);
-//    solveCrystal("/Users/merlin/Downloads/textfiles2/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 378, false, 0, false);
-//    solveCrystal("/Users/carpentermp/Downloads/textfiles/", "/Users/carpentermp/Downloads/crystalResults", Molecule.m05, 189, true, 5, false);
-//    solveCrystal("/Users/merlin/Downloads/textfiles/", "/Users/merlin/Downloads/crystalResults", Molecule.m05, 189, true, 0, false);
+    try {
+      SolverParms parms = new SolverParms(args);
+      solveCrystals(parms);
+    }
+    catch (IllegalArgumentException e) {
+      System.out.println("\nError: " + e.getMessage() + "\n");
+      SolverParms.usage();
+    }
+//    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m05).endingCrystal(10));
+//    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m09).crystal(426).extraHoles(5).quitAfter(SolverParms.HOUR));
   }
 
 }

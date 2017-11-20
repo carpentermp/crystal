@@ -9,13 +9,14 @@ public class CrystalResults {
 
   private static final String FN_BEADS = "beads.txt";
   private static final String FN_ADJACENCIES = "adjacencies.txt";
-  private static final String FN_PLACEMENTS = "placements.txt";
+  private static final String FN_BONDS = "bonds.txt";
+  private static final String FN_BOND_TYPES = "bond_types.txt";
   private static final String FN_TAGS = "tags.txt";
   private static final String FN_RATIOS = "ratios.txt";
 
   private final Molecule rootMolecule;
   private final Crystal crystal;
-  private final List<Integer> nodeIds;
+  private final List<Integer> nodeIds; // sorted list of nodes in the crystal unit cell
   private final int extraHoles;
   private final boolean dedup;
   private final boolean doGZip;
@@ -27,12 +28,14 @@ public class CrystalResults {
   private String outputDir;
   private String beadsFn;
   private String adjacenciesFn;
-  private String placementsFn;
+  private String bondsFn;
+  private String bondTypesFn;
   private String tagsFn;
   private String ratiosFn;
   private BufferedWriter beadsWriter;
   private BufferedWriter adjacenciesWriter;
-  private BufferedWriter placementsWriter;
+  private BufferedWriter bondsWriter;
+  private BufferedWriter bondTypesWriter;
   private BufferedWriter tagsWriter;
   private BufferedWriter ratiosWriter;
 
@@ -55,18 +58,18 @@ public class CrystalResults {
       this.outputDir = Utils.addTrailingSlash(Utils.createSubDir(moleculeDir, getOutputDirName()).getAbsolutePath());
       this.beadsFn = createFn(FN_BEADS);
       this.adjacenciesFn = createFn(FN_ADJACENCIES);
-      this.placementsFn = createFn(FN_PLACEMENTS);
+      this.bondsFn = createFn(FN_BONDS);
+      this.bondTypesFn = createFn(FN_BOND_TYPES);
       this.tagsFn = createFn(FN_TAGS);
       this.ratiosFn = createFn(FN_RATIOS);
       this.beadsWriter = Utils.getWriter(beadsFn);
       this.adjacenciesWriter = Utils.getWriter(adjacenciesFn);
-      this.placementsWriter = Utils.getWriter(placementsFn);
+      this.bondsWriter = Utils.getWriter(bondsFn);
+      this.bondTypesWriter = Utils.getWriter(bondTypesFn);
       this.tagsWriter = Utils.getWriter(tagsFn);
       this.ratiosWriter = Utils.getWriter(ratiosFn);
-      String headerForBeadsAndPlacements = Utils.join(nodeIds, " ");
-      outputHeader(beadsWriter, headerForBeadsAndPlacements);
+      outputHeader(beadsWriter, Utils.join(nodeIds, " "));
       outputHeader(adjacenciesWriter, Utils.join(rootMolecule.getAdjacencyOrder(), " "));
-      outputHeader(placementsWriter, headerForBeadsAndPlacements);
     }
     catch (IOException e) {
       throw new RuntimeException(e);
@@ -103,7 +106,9 @@ public class CrystalResults {
     try {
       beadsWriter.close();
       adjacenciesWriter.close();
-      placementsWriter.close();
+      beadsWriter.close();
+      bondsWriter.close();
+      bondTypesWriter.close();
       tagsWriter.close();
       ratiosWriter.close();
     }
@@ -116,9 +121,10 @@ public class CrystalResults {
     if (baseDir == null) {
       return;
     }
-    beadsWriter.write(Utils.join(mapBeads(nodeIds, result), " ") + "\n");
+    beadsWriter.write(Utils.join(mapBeads(result), " ") + "\n");
     adjacenciesWriter.write(Utils.join(result.getAdjacencyCounts(), " ") + "\n");
-    placementsWriter.write(Utils.join(mapPlacement(nodeIds, result), " ") + "\n");
+    bondsWriter.write(Utils.join(mapBonds(result), " ") + "\n");
+    bondTypesWriter.write(Utils.join(mapBondTypes(result), " ") + "\n");
     tagsWriter.write(result.getTag() + "\n");
     ratiosWriter.write(result.getBucketName() + "\n");
   }
@@ -131,34 +137,43 @@ public class CrystalResults {
     return outputDir + filename + (doGZip ? ".gz" : "");
   }
 
-  private List<Integer> mapBeads(List<Integer> nodeIds, CrystalResult cResult) {
-    Map<Node, Integer> nodeToBeadIdMap = CrystalResult.buildNodeToBeadIdMap(crystal, cResult.getRows(), true);
+  private List<Integer> mapBeads(CrystalResult cResult) {
     return nodeIds.stream()
-      .map(nodeId -> {
-        Integer beadId = nodeToBeadIdMap.get(crystal.getNode(nodeId));
-        if (beadId == null) {
-          beadId = 0;
-        }
-        return beadId;
-      })
+      .map(cResult::getBeadId)
       .collect(Collectors.toList());
   }
 
-  private List<Integer> mapPlacement(List<Integer> nodeIds, CrystalResult cResult) {
-    Map<Integer, Row> nodeIdToRowMap = new HashMap<>();
-    for (Row row : cResult.getRows()) {
-      nodeIdToRowMap.put(row.getNodeId(), row);
+  private List<String> mapBonds(CrystalResult result) {
+    List<String> bonds = new ArrayList<>();
+    for (Row row : result.getRows()) {
+      Node startingNode = crystal.getNode(row.getNodeId());
+      List<BondKey> bondKeys = row.getMolecule().getBondKeys(startingNode);
+      List<String> bondKeyIndices = bondKeys.stream()
+        .map(crystal::getBondKeyIndex)
+        .map(Object::toString)
+        .collect(Collectors.toList());
+      bonds.addAll(bondKeyIndices);
     }
-    List<Integer> placements = new ArrayList<>();
-    for (Integer nodeId : nodeIds) {
-      Row row = nodeIdToRowMap.get(nodeId);
-      int rotation = Direction.Right.value(); // it's the removed origin hole
-      if (row != null) {
-        rotation = row.getMolecule().getRotation().value();
+    return bonds;
+  }
+
+  private List<String> mapBondTypes(CrystalResult result) {
+    List<String> bondTypes = new ArrayList<>();
+    for (Row row : result.getRows()) {
+      Node startingNode = crystal.getNode(row.getNodeId());
+      List<BondKey> bondKeys = row.getMolecule().getBondKeys(startingNode);
+      for (BondKey key : bondKeys) {
+        int beadId1 = result.getBeadId(key.getFromNodeId());
+        int beadId2 = result.getBeadId(key.getToNodeId());
+        if (beadId1 > beadId2) {
+          int temp = beadId1;
+          beadId1 = beadId2;
+          beadId2 = temp;
+        }
+        bondTypes.add(beadId1 + "-" + beadId2);
       }
-      placements.add(rotation);
     }
-    return placements;
+    return bondTypes;
   }
 
   private List<Integer> buildNodeIdsArray() {
@@ -168,17 +183,17 @@ public class CrystalResults {
       nodeIds.add(removedNode.getId());
     }
     nodeIds.addAll(crystal.getNodeIds().stream().sorted().collect(Collectors.toList()));
-    List<Integer> allNodeIds = new ArrayList<>();
-    for (int i = 0; i < 9; i++) {
-      allNodeIds.addAll(nodeIds);
-    }
-    return allNodeIds;
+    return nodeIds;
   }
 
   private void outputHeader(Writer writer, String headerLine) throws IOException {
     writer.write("# ");
     writer.write(headerLine);
     writer.write("\n");
+  }
+
+  public int size() {
+    return resultsSeen.size();
   }
 
 }

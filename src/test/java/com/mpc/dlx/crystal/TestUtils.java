@@ -10,7 +10,7 @@ public class TestUtils {
 
   @Test
   public void testGetResourceFilename() {
-    assertNotNull(Utils.getResourceFilename("1372"));
+    assertNotNull(Utils.getResourceFilename("554"));
   }
 
   @Test

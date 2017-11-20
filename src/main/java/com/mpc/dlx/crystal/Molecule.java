@@ -42,27 +42,27 @@ public class Molecule {
   private static final int[] holeAdjacencies= {0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0};
 
   public static final Molecule m01 = new Molecule("m01", m01Adjacencies, Direction.Right, Direction.Right, Direction.Right, Direction.DownRight);
-  public static final Molecule m02 = new Molecule("m02", m02Adjacencies, Direction.Right, Direction.Right, Direction.Right, Direction.DownLeft);
+  public static final Molecule m02 = new Molecule("m02", m02Adjacencies, Direction.Right, Direction.Right, Direction.Right, Direction.DownLeft, Direction.UpRight);
   public static final Molecule m03 = new Molecule("m03", m03Adjacencies, Direction.Right, Direction.Right, Direction.DownRight, Direction.Right);
-  public static final Molecule m04 = new Molecule("m04", m04Adjacencies, Direction.Right, Direction.Right, Direction.DownLeft, Direction.Right);
-  public static final Molecule m05 = new Molecule("m05", m05Adjacencies, M05_BEAD_IDS, Orientation.Left, Direction.DownRight, Direction.UpRight, Direction.Right, Direction.DownRight);
-  public static final Molecule m06 = new Molecule("m06", m06Adjacencies, Direction.Right, Direction.Right, Direction.DownLeft, Direction.DownRight);
-  public static final Molecule m07 = new Molecule("m07", m07Adjacencies, Direction.Right, Direction.DownRight, Direction.Right, Direction.DownLeft);
+  public static final Molecule m04 = new Molecule("m04", m04Adjacencies, Direction.Right, Direction.Right, Direction.DownLeft, Direction.Right, Direction.UpLeft, Direction.Back, Direction.Back, Direction.UpLeft);
+  public static final Molecule m05 = new Molecule("m05", m05Adjacencies, M05_BEAD_IDS, Orientation.Left, Direction.DownRight, Direction.UpRight, Direction.Right, Direction.DownRight, Direction.Back, Direction.Back, Direction.Left);
+  public static final Molecule m06 = new Molecule("m06", m06Adjacencies, Direction.Right, Direction.Right, Direction.DownLeft, Direction.DownRight, Direction.Back, Direction.UpLeft);
+  public static final Molecule m07 = new Molecule("m07", m07Adjacencies, Direction.Right, Direction.DownRight, Direction.Right, Direction.DownLeft, Direction.UpLeft);
   public static final Molecule m08 = new Molecule("m08", m08Adjacencies, Direction.DownRight, Direction.Right, Direction.Right, Direction.DownRight);
   public static final Molecule m09 = new Molecule("m09", m09Adjacencies, Direction.Right, Direction.Right, Direction.DownRight, Direction.DownLeft);
   public static final Molecule m10 = new Molecule("m10", m10Adjacencies, M10_BEAD_IDS, Orientation.Left, Direction.Right, Direction.DownRight, Direction.Right, Direction.UpRight);
   public static final Molecule m11 = new Molecule("m11", m11Adjacencies, Direction.Right, Direction.DownRight, Direction.Right, Direction.Back, Direction.DownLeft);
   public static final Molecule m12 = new Molecule("m12", m12Adjacencies, Orientation.AChiral, Direction.Right, Direction.Right, Direction.Right, Direction.Right);
-  public static final Molecule m13 = new Molecule("m13", m13Adjacencies, Direction.Right, Direction.DownRight, Direction.UpRight, Direction.Right);
+  public static final Molecule m13 = new Molecule("m13", m13Adjacencies, Direction.Right, Direction.DownRight, Direction.UpRight, Direction.Right, Direction.Back, Direction.Left);
   public static final Molecule m14 = new Molecule("m14", m14Adjacencies, Direction.Right, Direction.Right, Direction.DownRight, Direction.DownRight);
   public static final Molecule m15 = new Molecule("m15", m15Adjacencies, Direction.Right, Direction.DownRight, Direction.Right, Direction.DownRight);
-  public static final Molecule m16 = new Molecule("m16", m16Adjacencies, Direction.Right, Direction.Right, Direction.DownLeft, Direction.DownLeft);
+  public static final Molecule m16 = new Molecule("m16", m16Adjacencies, Direction.Right, Direction.Right, Direction.DownLeft, Direction.DownLeft, Direction.Back, Direction.UpLeft);
   public static final Molecule m17 = new Molecule("m17", m17Adjacencies, Direction.DownRight, Direction.Right, Direction.Right, Direction.UpRight);
   public static final Molecule m18 = new Molecule("m18", m18Adjacencies, Direction.Right, Direction.DownRight, Direction.DownLeft, Direction.Left);
   public static final Molecule m19 = new Molecule("m19", m19Adjacencies, Direction.Right, Direction.Right, Direction.DownRight, Direction.Back, Direction.UpRight);
-  public static final Molecule m20 = new Molecule("m20", m20Adjacencies, M20_BEAD_IDS, Orientation.Left, Direction.Right, Direction.UpRight, Direction.DownRight, Direction.DownLeft);
-  public static final Molecule m21 = new Molecule("m21", m21Adjacencies, Direction.DownRight, Direction.UpRight, Direction.DownRight, Direction.UpRight);
-  public static final Molecule m22 = new Molecule("m22", m22Adjacencies, M22_BEAD_IDS, Orientation.Left, Direction.DownRight, Direction.UpRight, Direction.UpRight, Direction.DownRight);
+  public static final Molecule m20 = new Molecule("m20", m20Adjacencies, M20_BEAD_IDS, Orientation.Left, Direction.Right, Direction.UpRight, Direction.DownRight, Direction.DownLeft, Direction.UpLeft, Direction.Right);
+  public static final Molecule m21 = new Molecule("m21", m21Adjacencies, Direction.DownRight, Direction.UpRight, Direction.DownRight, Direction.UpRight, Direction.Left, Direction.Left, Direction.Back, Direction.Back, Direction.Back, Direction.Left);
+  public static final Molecule m22 = new Molecule("m22", m22Adjacencies, M22_BEAD_IDS, Orientation.Left, Direction.DownRight, Direction.UpRight, Direction.UpRight, Direction.DownRight, Direction.Left, Direction.Left);
 
   public static final Molecule hole = new Molecule("hole", holeAdjacencies, new int[] {0}, Orientation.Circular);
 
@@ -151,7 +151,6 @@ public class Molecule {
 
   @SuppressWarnings({"ForLoopReplaceableByForEach", "ConstantConditions"})
   public Node getBeadNode(Node startingNode, int beadId) {
-    Node prev = null;
     Node next = startingNode;
     int directionIndex = 0;
     for (int i = 0; i < beadIds.length; i++) {
@@ -162,11 +161,12 @@ public class Molecule {
         break;
       }
       Direction nextDirection = buildInstructions[directionIndex++];
-      if (nextDirection == Direction.Back) {
+      int backIndex = directionIndex - 2;
+      while (nextDirection == Direction.Back) {
+        Direction backDirection = buildInstructions[backIndex--].opposite();
+        next = next.get(backDirection);
         nextDirection = buildInstructions[directionIndex++];
-        next = prev;
       }
-      prev = next;
       next = next.get(nextDirection);
     }
     throw new IllegalArgumentException("Bad bead id: " + beadId);
@@ -179,17 +179,15 @@ public class Molecule {
   public Set<Integer> getUsedNodeIds(Node startingNode) {
     Set<Integer> usedNodeIds = new HashSet<>();
     usedNodeIds.add(startingNode.getId());
-    Node prev = null;
     Node next = startingNode;
-    for (Direction direction : buildInstructions) {
-      if (direction == Direction.Back) {
-        if (prev == null) {
-          throw new IllegalArgumentException("Bad molecule build instructions--you can't back up until you go forward");
-        }
-        next = prev;
-        continue;
+    for (int i = 0; i < buildInstructions.length; ) {
+      Direction direction = buildInstructions[i++];
+      int backIndex = i - 2;
+      while (direction == Direction.Back) {
+        Direction backDirection = buildInstructions[backIndex--].opposite();
+        next = next.get(backDirection);
+        direction = buildInstructions[i++];
       }
-      prev = next;
       next = next.get(direction);
       if (next == null) {
         return null;
@@ -197,6 +195,27 @@ public class Molecule {
       usedNodeIds.add(next.getId());
     }
     return usedNodeIds;
+  }
+
+  public List<BondKey> getBondKeys(Node startingNode) {
+    List<BondKey> bondKeys = new ArrayList<>();
+    Node next = startingNode;
+    for (int i = 0; i < buildInstructions.length; ) {
+      Direction direction = buildInstructions[i++];
+      int backIndex = i - 2;
+      while (direction == Direction.Back) {
+        Direction backDirection = buildInstructions[backIndex--].opposite();
+        next = next.get(backDirection);
+        direction = buildInstructions[i++];
+      }
+      Node prev = next;
+      next = next.get(direction);
+      if (next == null) {
+        return null;
+      }
+      bondKeys.add(new BondKey(prev.getId(), direction, next.getId()));
+    }
+    return bondKeys;
   }
 
   public boolean equals(Object object) {

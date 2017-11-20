@@ -13,6 +13,10 @@ public class CrystalResult {
   private final Molecule rootMolecule;
   private final List<Row> rows;
   private final String bucketName;
+  // map of node to the bead ID at that node (without "high" bead ids for right-hand oriented molecules)
+  private final Map<Node, Integer> nodeToBeadIdsNoHigh = new HashMap<>();
+  // map of node to the bead ID at that node (with "high" bead ids for right-hand oriented molecules)
+  private final Map<Node, Integer> nodeToBeadIdsHigh = new HashMap<>();
   private final List<Integer> adjacencyCounts;
   private final String tag;
   private final ResultEquality equality;
@@ -22,8 +26,9 @@ public class CrystalResult {
     this.rootMolecule = rootMolecule;
     this.rows = rows;
     this.bucketName = buildBucketName();
-    this.adjacencyCounts = computeAdjacencyCounts(buildNodeToBeadIdMap(crystal, rows, false));
-    this.tag = computeTag(buildNodeToBeadIdMap(crystal, rows, true));
+    buildNodeToBeadIdMaps();
+    this.adjacencyCounts = computeAdjacencyCounts();
+    this.tag = computeTag();
     this.equality = computeEquality();
   }
 
@@ -37,6 +42,15 @@ public class CrystalResult {
 
   public String getTag() {
     return tag;
+  }
+
+  public int getBeadId(int nodeId) {
+    return getBeadId(crystal.getNode(nodeId));
+  }
+
+  public int getBeadId(Node node) {
+    Integer beadId = nodeToBeadIdsHigh.get(node);
+    return beadId == null ? 0 : beadId;
   }
 
   private String buildBucketName() {
@@ -72,8 +86,8 @@ public class CrystalResult {
    *
    * @return an ordered list of counts for the adjacencies between different beads
    */
-  private List<Integer> computeAdjacencyCounts(Map<Node, Integer> nodeToBeadIdMap) {
-    Map<String, Integer> adjacencyCountMap = buildAdjacencyCountMap(nodeToBeadIdMap);
+  private List<Integer> computeAdjacencyCounts() {
+    Map<String, Integer> adjacencyCountMap = buildAdjacencyCountMap(nodeToBeadIdsNoHigh);
     for (Row row : rows) {
       if (!row.isHole()) {
         // subtract the counts for adjacencies within the molecules--they don't count
@@ -138,29 +152,23 @@ public class CrystalResult {
   }
 
   /**
-   * build a map of node to the bead at that node
-   *
-   * @return map of node to the bead at that node
+   * build a maps of node to the bead id at that node (with ids both adjusted and not adjusted for right-hand molecules)
    */
-  public static Map<Node, Integer> buildNodeToBeadIdMap(Crystal crystal, List<Row> rows, boolean doRightHandOffset) {
-    Map<Node, Integer> nodeToBeadIdMap = new HashMap<>();
+  private void buildNodeToBeadIdMaps() {
     for (Row row : rows) {
       if (row.isHole()) {
         continue;
       }
       Molecule molecule = row.getMolecule();
-      int rightHandOffset = 0;
-      if (doRightHandOffset && molecule.getOrientation() == Orientation.Right) {
-        rightHandOffset = molecule.size();
-      }
+      int rightHandOffset = molecule.getOrientation() == Orientation.Right ? molecule.size() : 0;
       Node startingNode = crystal.getNode(row.getNodeId());
       for (int i = 0; i < molecule.size(); i++) {
         int beadId = i + 1;
         Node beadNode = molecule.getBeadNode(startingNode, beadId);
-        nodeToBeadIdMap.put(beadNode, beadId + rightHandOffset);
+        this.nodeToBeadIdsHigh.put(beadNode, beadId + rightHandOffset);
+        this.nodeToBeadIdsNoHigh.put(beadNode, beadId);
       }
     }
-    return nodeToBeadIdMap;
   }
 
   public List<Integer> getAdjacencyCounts() {
@@ -187,8 +195,8 @@ public class CrystalResult {
     return equality.hashCode();
   }
 
-  private String computeTag(Map<Node, Integer> nodeToBeadIdMap) {
-    List<String> regularTracks = getTrackList(nodeToBeadIdMap).stream()
+  private String computeTag() {
+    List<String> regularTracks = getTrackList().stream()
       .map(Utils::smallestSubstring)
       .map(Utils::rotateOptimally)
       .distinct()
@@ -223,7 +231,7 @@ public class CrystalResult {
     return (char) ('a' + beadId + moleculeSize);
   }
 
-  private List<String> getTrackList(Map<Node, Integer> nodeToBeadIdMap) {
+  private List<String> getTrackList() {
     int[][] nbo = crystal.getNeighborsByOrientation();
     List<String> trackList = new ArrayList<>();
     if (nbo == null) {
@@ -236,7 +244,7 @@ public class CrystalResult {
       for (int j = 0; j < height; j++) {
         Node node = crystal.getNode(nbo[j + 1][i]);
         // if node is null, it's a hole
-        Integer beadId = node == null ? 0 : nodeToBeadIdMap.get(node);
+        Integer beadId = node == null ? 0 : nodeToBeadIdsHigh.get(node);
         sb.append((char) ('a' + (beadId == null ? 0 : beadId)));
       }
       trackList.add(sb.toString());

@@ -13,7 +13,7 @@ public class TestMolecule {
 
   private Molecule molecule;
   private Molecule mirrored;
-  private Crystal c1372 = new Crystal(Utils.getResourceFilename("1372"));
+  private Crystal c554 = new Crystal(Utils.getResourceFilename("554"));
 
   @Before
   public void setUp() {
@@ -61,34 +61,107 @@ public class TestMolecule {
 
   @Test
   public void testGetUsedNodeIds() {
-    Node startingNode = c1372.getNode(2820);
+    Node startingNode = c554.getNode(2423);
     Set<Integer> usedNodeIds = molecule.getUsedNodeIds(startingNode);
-    assertUsedNodeIds(usedNodeIds, 2820, 2582, 1063, 1261, 2622);
+    assertUsedNodeIds(usedNodeIds, 864, 944, 2423, 2503, 2463);
     usedNodeIds = Molecule.m19.getUsedNodeIds(startingNode);
-    assertUsedNodeIds(usedNodeIds, 2820, 2582, 2622, 1063, 1062);
+    assertUsedNodeIds(usedNodeIds, 944, 2423, 2503, 2463, 943);
+  }
+
+  @Test
+  public void testBack() {
+    Node startingNode = c554.getNode(2423);
+    Molecule molecule = new Molecule("test", new int[]{1, 2, 3, 4, 5}, Direction.Right, Direction.DownRight, Direction.UpRight, Direction.Back, Direction.Back, Direction.Back, Direction.UpLeft, Direction.Back, Direction.Right);
+    Set<Integer> usedNodeIds = molecule.getUsedNodeIds(startingNode);
+    assertEquals(5, usedNodeIds.size());
+    assertEquals(823, molecule.getBeadNode(startingNode, 5).getId());
   }
 
   @Test
   public void testGetBeadNode() {
-    Node startingNode = c1372.getNode(2820);
+    Node startingNode = c554.getNode(2423);
 
-    assertEquals(2820, Molecule.m22.getBeadNode(startingNode, 1).getId());
-    assertEquals(2582, Molecule.m22.getBeadNode(startingNode, 2).getId());
-    assertEquals(2622, Molecule.m22.getBeadNode(startingNode, 3).getId());
-    assertEquals(1261, Molecule.m22.getBeadNode(startingNode, 4).getId());
-    assertEquals(1022, Molecule.m22.getBeadNode(startingNode, 5).getId());
+    assertEquals(2423, Molecule.m22.getBeadNode(startingNode, 1).getId());
+    assertEquals(2463, Molecule.m22.getBeadNode(startingNode, 2).getId());
+    assertEquals(2503, Molecule.m22.getBeadNode(startingNode, 3).getId());
+    assertEquals(864, Molecule.m22.getBeadNode(startingNode, 4).getId());
+    assertEquals(903, Molecule.m22.getBeadNode(startingNode, 5).getId());
 
-    assertEquals(2820, Molecule.m19.getBeadNode(startingNode, 1).getId());
-    assertEquals(2582, Molecule.m19.getBeadNode(startingNode, 2).getId());
-    assertEquals(2622, Molecule.m19.getBeadNode(startingNode, 3).getId());
-    assertEquals(1063, Molecule.m19.getBeadNode(startingNode, 4).getId());
-    assertEquals(1062, Molecule.m19.getBeadNode(startingNode, 5).getId());
+    assertEquals(2423, Molecule.m19.getBeadNode(startingNode, 1).getId());
+    assertEquals(2463, Molecule.m19.getBeadNode(startingNode, 2).getId());
+    assertEquals(2503, Molecule.m19.getBeadNode(startingNode, 3).getId());
+    assertEquals(944, Molecule.m19.getBeadNode(startingNode, 4).getId());
+    assertEquals(943, Molecule.m19.getBeadNode(startingNode, 5).getId());
 
     try {
       Molecule.m19.getBeadNode(startingNode, 6).getId();
       fail("Should have failed getting bead node 6");
     }
     catch (IllegalArgumentException e) {
+      // expected
+    }
+  }
+
+  @Test
+  public void testGetBondKeys() {
+    Node startingNode = c554.getNode(2423);
+    assertEquals(4, Molecule.m01.getBondKeys(startingNode).size());
+    assertEquals(5, Molecule.m02.getBondKeys(startingNode).size());
+    assertEquals(4, Molecule.m03.getBondKeys(startingNode).size());
+    assertEquals(6, Molecule.m04.getBondKeys(startingNode).size());
+    assertEquals(5, Molecule.m05.getBondKeys(startingNode).size());
+    assertEquals(5, Molecule.m06.getBondKeys(startingNode).size());
+    assertEquals(5, Molecule.m07.getBondKeys(startingNode).size());
+    assertEquals(4, Molecule.m08.getBondKeys(startingNode).size());
+    assertEquals(4, Molecule.m09.getBondKeys(startingNode).size());
+    assertEquals(4, Molecule.m10.getBondKeys(startingNode).size());
+    assertEquals(4, Molecule.m11.getBondKeys(startingNode).size());
+    assertEquals(4, Molecule.m12.getBondKeys(startingNode).size());
+    assertEquals(5, Molecule.m13.getBondKeys(startingNode).size());
+    assertEquals(4, Molecule.m14.getBondKeys(startingNode).size());
+    assertEquals(4, Molecule.m15.getBondKeys(startingNode).size());
+    assertEquals(5, Molecule.m16.getBondKeys(startingNode).size());
+    assertEquals(4, Molecule.m17.getBondKeys(startingNode).size());
+    assertEquals(4, Molecule.m18.getBondKeys(startingNode).size());
+    assertEquals(4, Molecule.m19.getBondKeys(startingNode).size());
+    assertEquals(6, Molecule.m20.getBondKeys(startingNode).size());
+
+    List<BondKey> bondKeys = Molecule.m21.getBondKeys(startingNode);
+    assertEquals(7, bondKeys.size());
+    assertTrue(bondKeys.contains(new BondKey(864, Direction.UpLeft, 2423)));
+    assertTrue(bondKeys.contains(new BondKey(864, Direction.UpRight, 2463)));
+    assertTrue(bondKeys.contains(new BondKey(864, Direction.Right, 904)));
+    assertTrue(bondKeys.contains(new BondKey(904, Direction.UpLeft, 2463)));
+    assertTrue(bondKeys.contains(new BondKey(904, Direction.UpRight, 2503)));
+    assertTrue(bondKeys.contains(new BondKey(2423, Direction.Right, 2463)));
+    assertTrue(bondKeys.contains(new BondKey(2463, Direction.Right, 2503)));
+    assertKeysHaveOffsets(bondKeys, c554);
+
+    bondKeys = Molecule.m22.getBondKeys(startingNode);
+    assertEquals(6, bondKeys.size());
+    assertTrue(bondKeys.contains(new BondKey(864, Direction.UpLeft, 2423)));
+    assertTrue(bondKeys.contains(new BondKey(864, Direction.UpRight, 2463)));
+    assertTrue(bondKeys.contains(new BondKey(903, Direction.DownLeft, 2463)));
+    assertTrue(bondKeys.contains(new BondKey(903, Direction.DownRight, 2503)));
+    assertTrue(bondKeys.contains(new BondKey(2423, Direction.Right, 2463)));
+    assertTrue(bondKeys.contains(new BondKey(2463, Direction.Right, 2503)));
+    assertKeysHaveOffsets(bondKeys, c554);
+  }
+
+  private void assertKeysHaveOffsets(List<BondKey> bondKeys, Crystal crystal) {
+    for (BondKey key : bondKeys) {
+      assertNotNull(crystal.getBondKeyIndex(key));
+    }
+  }
+
+  @Test
+  public void testFromNumber() {
+    assertEquals(Molecule.m06, Molecule.fromNumber(6));
+    try {
+      Molecule.fromNumber(23);
+      fail("Should have failed with number 23 since that's more molecules than we have");
+    }
+    catch (RuntimeException e) {
       // expected
     }
   }
@@ -128,7 +201,7 @@ public class TestMolecule {
     assertEquals(m1, m2);
     assertNotEquals(m1, m3);
     assertFalse(m1.equals(null));
-    assertFalse(m1.equals(c1372));
+    assertFalse(m1.equals(c554));
     assertNotEquals(molecule, mirrored);
   }
 

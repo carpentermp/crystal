@@ -7,24 +7,11 @@ import static org.junit.Assert.*;
 
 public class TestCrystal {
 
-  private Crystal c1372;
   private Crystal c59;
 
   @Before
   public void setUp() {
-    c1372 = new Crystal(Utils.getResourceFilename("1372"));
     c59 = new Crystal(Utils.getResourceFilename("59"));
-  }
-
-  @Test
-  public void testC1372() {
-    assertEquals(60, c1372.size());
-    for (Integer nodeId : c1372.getNodeIds()) {
-      assertNotNull(c1372.getNode(nodeId));
-    }
-    assertNull(c1372.getNode(0));
-    assertEquals("c1372", c1372.getName());
-    assertEquals(9, c1372.getCoordinates(2820).size());
   }
 
   @Test

@@ -10,7 +10,7 @@ import static org.junit.Assert.*;
 public class TestRow {
 
   private Molecule molecule;
-  private Crystal c1372;
+  private Crystal c554;
   private Crystal c59;
   private Set<Integer> usedIds;
   private Row row;
@@ -18,21 +18,21 @@ public class TestRow {
   @Before
   public void setUp() {
     molecule = new Molecule("M00", new int[] {}, Direction.DownRight, Direction.Right, Direction.Right, Direction.UpLeft, Direction.DownLeft);
-    c1372 = new Crystal(Utils.getResourceFilename("1372"));
+    c554 = new Crystal(Utils.getResourceFilename("554"));
     c59 = new Crystal(Utils.getResourceFilename("59"));
-    usedIds = molecule.getUsedNodeIds(c1372.getNode(2820));
-    row = new Row(2820, molecule, usedIds);
+    usedIds = molecule.getUsedNodeIds(c554.getNode(2423));
+    row = new Row(2423, molecule, usedIds);
   }
 
   @Test
   public void testRow() throws Exception {
-    assertEquals(2820, row.getNodeId());
+    assertEquals(2423, row.getNodeId());
     assertEquals(molecule, row.getMolecule());
-    assertTrue(usedIds.contains(2820));
-    assertTrue(usedIds.contains(1261));
-    assertTrue(usedIds.contains(1301));
-    assertTrue(usedIds.contains(1301));
-    assertTrue(usedIds.contains(2622));
+    assertTrue(usedIds.contains(2423));
+    assertTrue(usedIds.contains(864));
+    assertTrue(usedIds.contains(944));
+    assertTrue(usedIds.contains(2503));
+    assertTrue(usedIds.contains(904));
     assertFalse(row.isHole());
   }
 
@@ -57,13 +57,13 @@ public class TestRow {
 
   @Test
   public void testBytes() {
-    String[] columnNames = CrystalSolver.buildColumnNames(c1372, 0);
+    String[] columnNames = CrystalSolver.buildColumnNames(c554, 0);
     byte[] bytes = row.getBytes(columnNames);
-    assertEquals(1, bytes[6]);
-    assertEquals(1, bytes[20]);
-    assertEquals(1, bytes[22]);
-    assertEquals(1, bytes[34]);
-    assertEquals(1, bytes[49]);
+    assertEquals(1, bytes[18]);
+    assertEquals(1, bytes[27]);
+    assertEquals(1, bytes[57]);
+    assertEquals(1, bytes[62]);
+    assertEquals(1, bytes[67]);
     assertEquals(0, bytes[1]);
     assertEquals(0, bytes[2]);
     assertEquals(0, bytes[33]);

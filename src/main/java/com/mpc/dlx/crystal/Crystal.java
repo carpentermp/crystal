@@ -12,12 +12,15 @@ public class Crystal {
   private static final String NEIGHBORS_FILENAME = "neighbors.txt";
   private static final String COORDINATES_FILENAME = "replicated_coordinates.txt";
   private static final String NEIGHBORS_BY_ORIENTATION_FILENAME = "nbo.txt";
+  private static final String MIDPOINTS_FILENAME = "midpoints.txt";
   private static final int DEFAULT_MOLECULE_SIZE = 5;
 
   private final String name;
   private final Map<Integer, Node> nodes = new HashMap<>();
   private final Map<Integer, List<Coordinate>> coordinates;
   private final int[][] nbo;
+  // map of possible bonds to their index in the midpoints.txt file
+  private final Map<BondKey, Integer> bondMap;
   private int holeCount;
   private Node removedNode;
 
@@ -40,6 +43,7 @@ public class Crystal {
       }
       this.coordinates = readInCoordinates(baseDir);
       this.nbo = readInNbo(baseDir);
+      this.bondMap = readInBondMap(baseDir);
       checkLinksBackAndForth();
     }
     catch (IOException e) {
@@ -109,6 +113,26 @@ public class Crystal {
     if (node.getId() != next.get(direction.opposite()).getId()) {
       throw new IllegalArgumentException("Crystal links aren't set up right!");
     }
+  }
+
+  private Map<BondKey, Integer> readInBondMap(String baseDir) throws IOException {
+    Map<BondKey, Integer> bondMap = new HashMap<>();
+    String midpointsFilename = baseDir + MIDPOINTS_FILENAME;
+    String line;
+    int lineNumber = 0;
+    try (BufferedReader reader = new BufferedReader(new FileReader(midpointsFilename))) {
+      while ((line = reader.readLine()) != null) {
+        String[] parts = line.split(" ");
+        BondKey key = new BondKey(myParseInt(parts[0]), Direction.fromValue(myParseInt(parts[1])), myParseInt(parts[2]));
+        bondMap.put(key, lineNumber++);
+      }
+    }
+    return bondMap;
+  }
+
+  private int myParseInt(String string) {
+    int index = string.contains(".") ? string.indexOf(".") : string.length();
+    return Integer.parseInt(string.substring(0, index));
   }
 
   private int[][] readInNbo(String baseDir) {
@@ -204,9 +228,8 @@ public class Crystal {
     return nbo;
   }
 
-  public static void main(String[] args) {
-    Crystal crystal = new Crystal("/Users/carpentermp/Downloads/textfiles/1372/");
-    System.out.println("Crystal: " + crystal.getName());
+  public Integer getBondKeyIndex(BondKey key) {
+    return bondMap.get(key);
   }
 
 }
