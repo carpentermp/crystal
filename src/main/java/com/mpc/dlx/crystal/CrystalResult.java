@@ -203,7 +203,6 @@ public class CrystalResult {
       .map(Utils::rotateOptimally)
       .distinct()
       .collect(Collectors.toList());
-    System.out.println(regularTracks);
     List<String> chiralOppositeTracks = trackList
       .stream()
       .map(s -> chiralOpposite(s, rootMolecule.size()))
@@ -211,7 +210,6 @@ public class CrystalResult {
       .map(Utils::rotateOptimally)
       .distinct()
       .collect(Collectors.toList());
-    System.out.println(chiralOppositeTracks);
     String partialTag = regularTracks.stream()
       .sorted()
       .collect(Collectors.joining());
