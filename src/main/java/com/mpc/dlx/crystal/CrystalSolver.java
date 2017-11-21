@@ -265,7 +265,7 @@ public class CrystalSolver {
   private static final SolverParms DEFAULT_PARMS = new SolverParms("5", "/Users/merlin/Downloads/textfiles2/")
                     .outputDir("/Users/merlin/Downloads/crystalResults");
 
-  public static void main(String[] args) throws IOException {
+  private static void doIt(String[] args) throws IOException {
     try {
       SolverParms parms = new SolverParms(args);
       solveCrystals(parms);
@@ -274,8 +274,13 @@ public class CrystalSolver {
       System.out.println("\nError: " + e.getMessage() + "\n");
       SolverParms.usage();
     }
+  }
+
+  public static void main(String[] args) throws IOException {
+    doIt(args);
 //    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m05).endingCrystal(10));
 //    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m09).crystal(426).extraHoles(5).quitAfter(SolverParms.HOUR));
+//    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m09).crystal(358));
   }
 
 }

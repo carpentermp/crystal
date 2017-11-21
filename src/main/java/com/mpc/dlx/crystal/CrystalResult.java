@@ -196,15 +196,22 @@ public class CrystalResult {
   }
 
   private String computeTag() {
-    List<String> regularTracks = getTrackList().stream()
+    List<String> trackList = getTrackList();
+    List<String> regularTracks = trackList
+      .stream()
       .map(Utils::smallestSubstring)
       .map(Utils::rotateOptimally)
       .distinct()
       .collect(Collectors.toList());
-    List<String> chiralOppositeTracks = regularTracks
+    System.out.println(regularTracks);
+    List<String> chiralOppositeTracks = trackList
       .stream()
       .map(s -> chiralOpposite(s, rootMolecule.size()))
+      .map(Utils::smallestSubstring)
+      .map(Utils::rotateOptimally)
+      .distinct()
       .collect(Collectors.toList());
+    System.out.println(chiralOppositeTracks);
     String partialTag = regularTracks.stream()
       .sorted()
       .collect(Collectors.joining());

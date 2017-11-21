@@ -42,7 +42,7 @@ public class Molecule {
   private static final int[] holeAdjacencies= {0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0};
 
   public static final Molecule m01 = new Molecule("m01", m01Adjacencies, Direction.Right, Direction.Right, Direction.Right, Direction.DownRight);
-  public static final Molecule m02 = new Molecule("m02", m02Adjacencies, Direction.Right, Direction.Right, Direction.Right, Direction.DownLeft, Direction.UpRight);
+  public static final Molecule m02 = new Molecule("m02", m02Adjacencies, Direction.Right, Direction.Right, Direction.Right, Direction.DownLeft, Direction.UpLeft);
   public static final Molecule m03 = new Molecule("m03", m03Adjacencies, Direction.Right, Direction.Right, Direction.DownRight, Direction.Right);
   public static final Molecule m04 = new Molecule("m04", m04Adjacencies, Direction.Right, Direction.Right, Direction.DownLeft, Direction.Right, Direction.UpLeft, Direction.Back, Direction.Back, Direction.UpLeft);
   public static final Molecule m05 = new Molecule("m05", m05Adjacencies, M05_BEAD_IDS, Orientation.Left, Direction.DownRight, Direction.UpRight, Direction.Right, Direction.DownRight, Direction.Back, Direction.Back, Direction.Left);
