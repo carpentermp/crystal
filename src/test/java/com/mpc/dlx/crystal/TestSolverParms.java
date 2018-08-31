@@ -63,6 +63,16 @@ public class TestSolverParms {
   }
 
   @Test
+  public void testSolverParmsWithCompoundMoleculeParm() {
+    SolverParms parms = new SolverParms("m09r_m10l", "inputDir");
+    assertEquals(Molecule.m09.mirror(Direction.Right), parms.getMolecule());
+    assertEquals(Molecule.m10, parms.getMolecule2());
+    parms = new SolverParms("m10l_m09r", "inputDir");
+    assertEquals(Molecule.m09.mirror(Direction.Right), parms.getMolecule());
+    assertEquals(Molecule.m10, parms.getMolecule2());
+  }
+
+  @Test
   public void testInvalid() {
     try {
       new SolverParms();

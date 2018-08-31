@@ -15,6 +15,7 @@ public class CrystalSolver {
   private static final String HOLES_PREFIX = "h";
 
   private final Molecule rootMolecule;
+  private final Molecule rootMolecule2;
   private final Crystal crystal;
   private final int extraHoles;
   private final String[] columnNames;
@@ -28,14 +29,15 @@ public class CrystalSolver {
 
   public CrystalSolver(SolverParms parms, Crystal crystal) {
     this.rootMolecule = parms.getMolecule();
+    this.rootMolecule2 = parms.getMolecule2();
     this.crystal = crystal;
     this.extraHoles = parms.getExtraHoles();
     this.columnNames = buildColumnNames(crystal, extraHoles);
-    this.molecules = buildMolecules(rootMolecule);
+    this.molecules = buildMolecules(rootMolecule, rootMolecule2);
     this.rows = buildRows(molecules);
     this.rowKeyToRows = buildRowKeyToRows(this.rows);
     this.matrix = buildMatrix(rows);
-    this.results = new CrystalResults(rootMolecule, crystal, extraHoles, parms.getOutputDir(), parms.isDedup(), parms.isDoGZip());
+    this.results = new CrystalResults(rootMolecule, rootMolecule2, crystal, extraHoles, parms.getOutputDir(), parms.isDedup(), parms.isDoGZip());
     this.quitTime = parms.getQuitTime();
     this.maxSolutionCount = parms.getMaxSolutionCount();
   }
@@ -50,23 +52,24 @@ public class CrystalSolver {
     return columnNames.toArray(new String[columnNames.size()]);
   }
 
-  private List<Molecule> buildMolecules(Molecule molecule) {
+  private List<Molecule> buildMolecules(Molecule molecule1, Molecule molecule2) {
+    if (molecule2 == null && (molecule1.getOrientation() == Orientation.Left || molecule1.getOrientation() == Orientation.Right)) {
+      molecule2 = molecule1.mirror(Direction.Right);
+    }
+    List<Molecule> moleculeVariants = getMoleculeVariants(molecule1);
+    if (molecule2 != null) {
+      moleculeVariants.addAll(getMoleculeVariants(molecule2));
+    }
+    return moleculeVariants;
+  }
+
+  private List<Molecule> getMoleculeVariants(Molecule molecule) {
     List<Molecule> moleculeVariants = new ArrayList<>();
     moleculeVariants.add(molecule);
-    Molecule l = molecule;
-    Molecule r = null;
-    if (molecule.getOrientation() == Orientation.Left || molecule.getOrientation() == Orientation.Right) {
-      r = molecule.mirror(Direction.Right);
-      moleculeVariants.add(r);
-    }
     int rotations = molecule.getDistinctRotationCount() - 1;
     for (int i = 0; i < rotations; i++) {
-      l = l.rotate();
-      moleculeVariants.add(l);
-      if (r != null) {
-        r = r.rotate();
-        moleculeVariants.add(r);
-      }
+      molecule = molecule.rotate();
+      moleculeVariants.add(molecule);
     }
     return moleculeVariants;
   }
@@ -121,7 +124,7 @@ public class CrystalSolver {
     if (usedIds == null) {
       return null;
     }
-    if (usedIds.size() != rootMolecule.size()) {
+    if (usedIds.size() != molecule.size()) {
       // for small unit cells, the molecules wrap around on them themselves
       return null;
     }
@@ -279,6 +282,7 @@ public class CrystalSolver {
   public static void main(String[] args) throws IOException {
     doIt(args);
 //    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m05).endingCrystal(10));
+//    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m05).molecule2(Molecule.m06).startingCrystal(22).endingCrystal(22));
 //    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m09).crystal(426).extraHoles(5).quitAfter(SolverParms.HOUR));
 //    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m09).crystal(358));
   }

@@ -16,6 +16,23 @@ public class Molecule {
     "1-1", "1-2", "1-3", "1-4", "1-5", "2-2", "2-3", "2-4", "2-5", "3-3", "3-4", "3-5", "4-4", "4-5", "5-5"
   );
 
+  private static final List<String> HIGH_ADJACENCY_ORDER = Arrays.asList(
+    "6-6", "6-7", "6-8", "6-9", "6-10", "7-7", "7-8", "7-9", "7-10", "8-8", "8-9", "8-10", "9-9", "9-10", "10-10"
+  );
+
+  private static final List<String> INTER_ADJACENCY_ORDER = Arrays.asList(
+    "1-1", "1-2", "1-3", "1-4", "1-5", "1-6", "1-7", "1-8", "1-9", "1-10",
+    "2-2", "2-3", "2-4", "2-5", "2-6", "2-7", "2-8", "2-9", "2-10",
+    "3-3", "3-4", "3-5", "3-6", "3-7", "3-8", "3-9", "3-10",
+    "4-4", "4-5", "4-6", "4-7", "4-8", "4-9", "4-10",
+    "5-5", "5-6", "5-7", "5-8", "5-9", "5-10",
+    "6-6", "6-7", "6-8", "6-9", "6-10",
+    "7-7", "7-8", "7-9", "7-10",
+    "8-8", "8-9", "8-10",
+    "9-9", "9-10",
+    "10-10"
+  );
+
   // order is:                                 1-1, 1-2, 1-3, 1-4, 1-5, 2-2, 2-3, 2-4, 2-5, 3-3, 3-4, 3-5, 4-4, 4-5, 5-5
   private static final int[] m01Adjacencies = {0,   1,   0,   0,   0,   0,   1,   0,   0,   0,   1,   0,   0,   1,   0};
   private static final int[] m02Adjacencies = {0,   1,   0,   0,   0,   0,   1,   0,   0,   0,   1,   1,   0,   1,   0};
@@ -252,6 +269,14 @@ public class Molecule {
     return ADJACENCY_ORDER;
   }
 
+  public List<String> getHighAdjacencyOrder() {
+    return HIGH_ADJACENCY_ORDER;
+  }
+
+  public List<String> getInterAdjacencyOrder() {
+    return INTER_ADJACENCY_ORDER;
+  }
+
   static String buildAdjacencyName(int beadId1, int beadId2) {
     if (beadId1 > beadId2) {
       int temp = beadId1;
@@ -261,8 +286,8 @@ public class Molecule {
     return beadId1 + "-" + beadId2;
   }
 
-  public void subtractInternalAdjacencies(Map<String, Integer> adjacencyCountMap) {
-    List<String> adjacencyOrder = getAdjacencyOrder();
+  public void subtractInternalAdjacencies(Map<String, Integer> adjacencyCountMap, boolean isHighMolecule) {
+    List<String> adjacencyOrder = isHighMolecule ? getHighAdjacencyOrder() : getAdjacencyOrder();
     if (adjacencyOrder.size() != internalAdjacencies.length) {
       throw new IllegalArgumentException("adjacencyOrder list is wrong size. Expected: " + internalAdjacencies.length + ", actual: " + adjacencyOrder.size());
     }

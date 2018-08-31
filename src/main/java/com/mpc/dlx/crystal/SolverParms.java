@@ -8,6 +8,7 @@ public class SolverParms {
   public static final long INFINITE = Long.MAX_VALUE;
 
   private Molecule molecule = null;
+  private Molecule molecule2 = null;
   private String inputDir = null;
   private String outputDir = null;
   private int startingCrystal = 0;
@@ -48,7 +49,7 @@ public class SolverParms {
           break;
         default:
           if (molecule == null) {
-            molecule(Molecule.fromNumber(Integer.parseInt(arg)));
+            parseMoleculeParameter(arg);
           }
           else {
             inputDir(arg);
@@ -67,8 +68,57 @@ public class SolverParms {
     }
   }
 
+  private void parseMoleculeParameter(String parm) {
+    try {
+      int moleculeNumber = Integer.parseInt(parm);
+      molecule(Molecule.fromNumber(moleculeNumber));
+    }
+    catch (NumberFormatException e) {
+      String[] parts = parm.split("_");
+      Molecule m1 = parseMolecule(parts[0]);
+      Molecule m2 = null;
+      if (parts.length > 1) {
+        m2 = parseMolecule(parts[1]);
+        if (m1.equals(m2)) {
+          throw new IllegalArgumentException("both molecules must not be the same one!");
+        }
+        if (m1.size() != m2.size()) {
+          throw new IllegalArgumentException("both molecules must be the same size");
+        }
+        if (m1.getName().compareTo(m2.getName()) > 0) {
+          Molecule temp = m1;
+          m1 = m2;
+          m2 = temp;
+        }
+      }
+      molecule(m1);
+      if (m2 != null) {
+        molecule2(m2);
+      }
+    }
+  }
+
+  private static Molecule parseMolecule(String moleculeStr) {
+    if (moleculeStr.startsWith("m")) {
+      moleculeStr = moleculeStr.substring(1).toLowerCase();
+    }
+    boolean isRight = false;
+    if (moleculeStr.endsWith("l") || moleculeStr.endsWith("r")) {
+      if (moleculeStr.endsWith("r")) {
+        isRight = true;
+      }
+      moleculeStr = moleculeStr.substring(0, moleculeStr.length() - 1);
+    }
+    Molecule molecule = Molecule.fromNumber(Integer.parseInt(moleculeStr));
+    if (isRight) {
+      molecule = molecule.mirror(Direction.Right);
+    }
+    return molecule;
+  }
+
   public SolverParms(SolverParms parms) {
     this.molecule = parms.molecule;
+    this.molecule2 = parms.molecule2;
     this.inputDir = parms.inputDir;
     this.outputDir = parms.outputDir;
     this.startingCrystal = parms.startingCrystal;
@@ -82,6 +132,10 @@ public class SolverParms {
 
   public Molecule getMolecule() {
     return molecule;
+  }
+
+  public Molecule getMolecule2() {
+    return molecule2;
   }
 
   public int getStartingCrystal() {
@@ -122,6 +176,11 @@ public class SolverParms {
 
   public SolverParms molecule(Molecule molecule) {
     this.molecule = molecule;
+    return this;
+  }
+
+  public SolverParms molecule2(Molecule molecule) {
+    this.molecule2 = molecule;
     return this;
   }
 
@@ -215,8 +274,10 @@ public class SolverParms {
   }
 
   public static void usage() {
-    System.out.println("Usage: java -jar crystal.jar [options] moleculeNumber inputDir");
-    System.out.println("  moleculeNumber must be between 1 and 22");
+    System.out.println("Usage: java -jar crystal.jar [options] molecule(s) inputDir");
+    System.out.println("  molecule(s) parameter should be either:");
+    System.out.println("      a number between 1 and 22, or...");
+    System.out.println("      a string in this form: m09R_m10L");
     System.out.println("  inputDir points to parent directory where all crystal information is stored");
     System.out.println("  Options:");
     System.out.println("  -o dir         output directory (no output if not specified)");

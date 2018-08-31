@@ -11,6 +11,7 @@ public class CrystalResult {
 
   private final Crystal crystal;
   private final Molecule rootMolecule;
+  private final Molecule rootMolecule2;
   private final List<Row> rows;
   private final String bucketName;
   // map of node to the bead ID at that node (without "high" bead ids for right-hand oriented molecules)
@@ -21,9 +22,10 @@ public class CrystalResult {
   private final String tag;
   private final ResultEquality equality;
 
-  public CrystalResult(Crystal crystal, Molecule rootMolecule, List<Row> rows) {
+  public CrystalResult(Crystal crystal, Molecule rootMolecule, Molecule rootMolecule2, List<Row> rows) {
     this.crystal = crystal;
     this.rootMolecule = rootMolecule;
+    this.rootMolecule2 = rootMolecule2;
     this.rows = rows;
     this.bucketName = buildBucketName();
     buildNodeToBeadIdMaps();
@@ -87,16 +89,16 @@ public class CrystalResult {
    * @return an ordered list of counts for the adjacencies between different beads
    */
   private List<Integer> computeAdjacencyCounts() {
-    Map<String, Integer> adjacencyCountMap = buildAdjacencyCountMap(nodeToBeadIdsNoHigh);
+    Map<String, Integer> adjacencyCountMap = buildAdjacencyCountMap(rootMolecule2 == null ? nodeToBeadIdsNoHigh : nodeToBeadIdsHigh);
     for (Row row : rows) {
       if (!row.isHole()) {
         // subtract the counts for adjacencies within the molecules--they don't count
-        row.getMolecule().subtractInternalAdjacencies(adjacencyCountMap);
+        row.getMolecule().subtractInternalAdjacencies(adjacencyCountMap, isHighMolecule(row.getMolecule()));
       }
     }
     List<Integer> adjacencyCounts = new ArrayList<>();
-    for (int i = 1; i <= rootMolecule.size(); i++) {
-      for (int j = i; j <= rootMolecule.size(); j++) {
+    for (int i = 1; i <= getAdjacencyBeadCount(); i++) {
+      for (int j = i; j <= getAdjacencyBeadCount(); j++) {
         Integer count = adjacencyCountMap.get(Molecule.buildAdjacencyName(i, j));
         if (count == null) {
           count = 0;
@@ -105,6 +107,14 @@ public class CrystalResult {
       }
     }
     return adjacencyCounts;
+  }
+
+  private int getAdjacencyBeadCount() {
+    return rootMolecule2 == null ? rootMolecule.size() : rootMolecule.size() + rootMolecule2.size();
+  }
+
+  private boolean isHighMolecule(Molecule molecule) {
+    return rootMolecule2 != null && rootMolecule2.getName().equals(molecule.getName());
   }
 
   /**
@@ -160,7 +170,7 @@ public class CrystalResult {
         continue;
       }
       Molecule molecule = row.getMolecule();
-      int rightHandOffset = molecule.getOrientation() == Orientation.Right ? molecule.size() : 0;
+      int rightHandOffset = computeRightHandOffset(molecule);
       Node startingNode = crystal.getNode(row.getNodeId());
       for (int i = 0; i < molecule.size(); i++) {
         int beadId = i + 1;
@@ -171,12 +181,19 @@ public class CrystalResult {
     }
   }
 
+  private int computeRightHandOffset(Molecule molecule) {
+    if (rootMolecule2 == null) {
+      return molecule.getOrientation() == Orientation.Right ? molecule.size() : 0;
+    }
+    return molecule.getName().equals(rootMolecule2.getName()) ? rootMolecule.size() : 0;
+  }
+
   public List<Integer> getAdjacencyCounts() {
     return adjacencyCounts;
   }
 
   public String toString() {
-    return crystal.getName() + "_" + rootMolecule.getName() + "_" + getBucketName() + ": " + adjacencyCounts + ", tag: " + tag;
+    return crystal.getName() + "_" + CrystalResults.computeMoleculeDir(rootMolecule, rootMolecule2) + "_" + getBucketName() + ": " + adjacencyCounts + ", tag: " + tag;
   }
 
   public ResultEquality getEquality() {
