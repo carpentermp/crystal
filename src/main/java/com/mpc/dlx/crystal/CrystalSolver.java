@@ -281,7 +281,7 @@ public class CrystalSolver {
 
   public static void main(String[] args) throws IOException {
     doIt(args);
-//    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m05).endingCrystal(10));
+//    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.dimer).endingCrystal(10).extraHoles(1));
 //    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m05).molecule2(Molecule.m06).startingCrystal(22).endingCrystal(22));
 //    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m09).crystal(426).extraHoles(5).quitAfter(SolverParms.HOUR));
 //    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m09).crystal(358));

@@ -6,6 +6,7 @@ import java.util.*;
 public class Molecule {
 
   private static final int[] DEFAULT_BEAD_IDS = new int[] {1, 2, 3, 4, 5};
+  private static final int[] DIMER_BEAD_IDS = new int[] {1, 2};
   private static final int[] M05_BEAD_IDS = new int[] {1, 4, 2, 3, 5};
   private static final int[] M10_BEAD_IDS = new int[] {1, 2, 4, 5, 3};
   private static final int[] M20_BEAD_IDS = new int[] {1, 2, 5, 3, 4};
@@ -33,6 +34,11 @@ public class Molecule {
     "10-10"
   );
 
+  // note: for molecules of different size this would naturally be different. But since all our molecules are of size 5, this works for all of them
+  private static final List<String> DIMER_ADJACENCY_ORDER = Arrays.asList(
+    "1-1", "1-2", "2-2"
+  );
+
   // order is:                                 1-1, 1-2, 1-3, 1-4, 1-5, 2-2, 2-3, 2-4, 2-5, 3-3, 3-4, 3-5, 4-4, 4-5, 5-5
   private static final int[] m01Adjacencies = {0,   1,   0,   0,   0,   0,   1,   0,   0,   0,   1,   0,   0,   1,   0};
   private static final int[] m02Adjacencies = {0,   1,   0,   0,   0,   0,   1,   0,   0,   0,   1,   1,   0,   1,   0};
@@ -56,6 +62,7 @@ public class Molecule {
   private static final int[] m20Adjacencies = {0,   1,   0,   0,   0,   0,   1,   1,   1,   0,   1,   1,   0,   0,   0};
   private static final int[] m21Adjacencies = {0,   1,   1,   0,   0,   0,   1,   1,   0,   0,   1,   1,   0,   1,   0};
   private static final int[] m22Adjacencies = {0,   1,   0,   1,   0,   0,   1,   1,   1,   0,   0,   1,   0,   0,   0};
+  private static final int[] dimerAdjacencies = {0,   1,   0};
   private static final int[] holeAdjacencies= {0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0};
 
   public static final Molecule m01 = new Molecule("m01", m01Adjacencies, Direction.Right, Direction.Right, Direction.Right, Direction.DownRight);
@@ -80,6 +87,8 @@ public class Molecule {
   public static final Molecule m20 = new Molecule("m20", m20Adjacencies, M20_BEAD_IDS, Orientation.Left, Direction.Right, Direction.UpRight, Direction.DownRight, Direction.DownLeft, Direction.UpLeft, Direction.Right);
   public static final Molecule m21 = new Molecule("m21", m21Adjacencies, Direction.DownRight, Direction.UpRight, Direction.DownRight, Direction.UpRight, Direction.Left, Direction.Left, Direction.Back, Direction.Back, Direction.Back, Direction.Left);
   public static final Molecule m22 = new Molecule("m22", m22Adjacencies, M22_BEAD_IDS, Orientation.Left, Direction.DownRight, Direction.UpRight, Direction.UpRight, Direction.DownRight, Direction.Left, Direction.Left);
+
+  public static final Molecule dimer = new Molecule("dimer", dimerAdjacencies, DIMER_BEAD_IDS, Orientation.AChiral, Direction.Right);
 
   public static final Molecule hole = new Molecule("hole", holeAdjacencies, new int[] {0}, Orientation.Circular);
 
@@ -266,6 +275,9 @@ public class Molecule {
   }
 
   public List<String> getAdjacencyOrder() {
+    if (size() == 2) {
+      return DIMER_ADJACENCY_ORDER;
+    }
     return ADJACENCY_ORDER;
   }
 

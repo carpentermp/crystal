@@ -13,20 +13,24 @@ public class TestMolecule {
 
   private Molecule molecule;
   private Molecule mirrored;
+  private Molecule dimer;
   private Crystal c554 = new Crystal(Utils.getResourceFilename("554"));
 
   @Before
   public void setUp() {
     molecule = Molecule.m05;
     mirrored = molecule.mirror(Direction.Left);
+    dimer = Molecule.dimer;
   }
 
   @Test
   public void testGetters() {
     assertEquals("m05", molecule.getName());
     assertEquals(5, molecule.size());
+    assertEquals(2, dimer.size());
     assertEquals(Direction.Right, molecule.getRotation());
     assertEquals(Direction.Right, mirrored.getRotation());
+    assertEquals(Direction.Right, dimer.getRotation());
   }
 
   @Test
@@ -66,6 +70,13 @@ public class TestMolecule {
     assertUsedNodeIds(usedNodeIds, 864, 944, 2423, 2503, 2463);
     usedNodeIds = Molecule.m19.getUsedNodeIds(startingNode);
     assertUsedNodeIds(usedNodeIds, 944, 2423, 2503, 2463, 943);
+  }
+
+  @Test
+  public void testDimerUsedNodeIds() {
+    Node startingNode = c554.getNode(2423);
+    Set<Integer> usedNodeIds = dimer.getUsedNodeIds(startingNode);
+    assertUsedNodeIds(usedNodeIds, 2423, 2463);
   }
 
   @Test
@@ -224,6 +235,8 @@ public class TestMolecule {
   public void testComputeAdjacencyOrder() {
     assertEquals("1-1, 1-2, 1-3, 1-4, 1-5, 2-2, 2-3, 2-4, 2-5, 3-3, 3-4, 3-5, 4-4, 4-5, 5-5",
                  Utils.join(Molecule.m05.getAdjacencyOrder(), ", "));
+    assertEquals("1-1, 1-2, 2-2",
+                 Utils.join(Molecule.dimer.getAdjacencyOrder(), ", "));
   }
 
 }

@@ -13,6 +13,7 @@ public class TestCrystalResult {
   private Crystal c554;
   private Row row;
   private Row row2;
+  private Row dimerRow;
 
   @Before
   public void setUp() {
@@ -20,6 +21,7 @@ public class TestCrystalResult {
     row = new Row(2423, Molecule.m05, Molecule.m05.getUsedNodeIds(c554.getNode(2423)));
     Molecule mirror = Molecule.m05.mirror(Direction.Left);
     row2 = new Row(2423, mirror, mirror.getUsedNodeIds(c554.getNode(2423)));
+    dimerRow = new Row(2423, Molecule.dimer, Molecule.dimer.getUsedNodeIds(c554.getNode(2423)));
   }
 
   @Test
@@ -37,6 +39,13 @@ public class TestCrystalResult {
     assertEquals(8, result2.getBeadId(2503));
     assertEquals(9, result2.getBeadId(863));
     assertEquals(10, result2.getBeadId(943));
+  }
+
+  @Test
+  public void testGetBeadIdForDimer() {
+    CrystalResult result = new CrystalResult(c554, Molecule.dimer, null, Collections.singletonList(dimerRow));
+    assertEquals(1, result.getBeadId(2423));
+    assertEquals(2, result.getBeadId(2463));
   }
 
   @Test
@@ -59,6 +68,16 @@ public class TestCrystalResult {
     assertEquals(0, (int) adjacencyCounts.get(12)); // 4-4
     assertEquals(0, (int) adjacencyCounts.get(13)); // 4-5
     assertEquals(0, (int) adjacencyCounts.get(14)); // 5-5
+  }
+
+  @Test
+  public void testBuildAdjacencyCountMapForDimer() {
+    CrystalResult result = new CrystalResult(c554, Molecule.dimer, null, Collections.singletonList(dimerRow));
+    List<Integer> adjacencyCounts = result.getAdjacencyCounts();
+    assertEquals(3, adjacencyCounts.size());
+    assertEquals(0, (int) adjacencyCounts.get(0)); // 1-1
+    assertEquals(0, (int) adjacencyCounts.get(1)); // 1-2
+    assertEquals(0, (int) adjacencyCounts.get(2)); // 2-2
   }
 
 }

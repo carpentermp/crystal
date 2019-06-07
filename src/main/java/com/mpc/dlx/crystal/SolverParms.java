@@ -99,6 +99,9 @@ public class SolverParms {
   }
 
   private static Molecule parseMolecule(String moleculeStr) {
+    if (moleculeStr.toLowerCase().equals("dimer")) {
+      return Molecule.dimer;
+    }
     if (moleculeStr.startsWith("m")) {
       moleculeStr = moleculeStr.substring(1).toLowerCase();
     }
@@ -275,9 +278,10 @@ public class SolverParms {
 
   public static void usage() {
     System.out.println("Usage: java -jar crystal.jar [options] molecule(s) inputDir");
-    System.out.println("  molecule(s) parameter should be either:");
+    System.out.println("  molecule(s) parameter should be one of:");
     System.out.println("      a number between 1 and 22, or...");
-    System.out.println("      a string in this form: m09R_m10L");
+    System.out.println("      a string in this form: m09R_m10L or...");
+    System.out.println("      the word 'dimer'");
     System.out.println("  inputDir points to parent directory where all crystal information is stored");
     System.out.println("  Options:");
     System.out.println("  -o dir         output directory (no output if not specified)");
