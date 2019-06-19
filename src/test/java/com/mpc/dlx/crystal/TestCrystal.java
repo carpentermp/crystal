@@ -11,7 +11,7 @@ public class TestCrystal {
 
   @Before
   public void setUp() {
-    c59 = new Crystal(Utils.getResourceFilename("59"));
+    c59 = new Crystal(Utils.getResourceFilename("59"), 5);
   }
 
   @Test

@@ -14,13 +14,16 @@ public class TestMolecule {
   private Molecule molecule;
   private Molecule mirrored;
   private Molecule dimer;
-  private Crystal c554 = new Crystal(Utils.getResourceFilename("554"));
+  private Crystal c554;
+  private Crystal c554Dimer;
 
   @Before
   public void setUp() {
     molecule = Molecule.m05;
     mirrored = molecule.mirror(Direction.Left);
     dimer = Molecule.dimer;
+    c554 = new Crystal(Utils.getResourceFilename("554"), molecule.size());
+    c554Dimer = new Crystal(Utils.getResourceFilename("554"), dimer.size());
   }
 
   @Test
@@ -74,7 +77,7 @@ public class TestMolecule {
 
   @Test
   public void testDimerUsedNodeIds() {
-    Node startingNode = c554.getNode(2423);
+    Node startingNode = c554Dimer.getNode(2423);
     Set<Integer> usedNodeIds = dimer.getUsedNodeIds(startingNode);
     assertUsedNodeIds(usedNodeIds, 2423, 2463);
   }

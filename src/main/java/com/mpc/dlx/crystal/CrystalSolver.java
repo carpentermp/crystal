@@ -253,7 +253,7 @@ public class CrystalSolver {
       Crystal crystal;
       try {
         String baseDir = Utils.addTrailingSlash(parms.getInputDir()) + i + "/";
-        crystal = new Crystal(baseDir);
+        crystal = new Crystal(baseDir, parms.getMolecule().size());
         new CrystalSolver(parms, crystal).solve();
       }
       catch (RuntimeException e) {

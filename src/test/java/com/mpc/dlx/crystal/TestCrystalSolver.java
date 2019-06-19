@@ -16,7 +16,7 @@ public class TestCrystalSolver {
 
   @Before
   public void setUp() {
-    solver = new CrystalSolver(new SolverParms("5", "inputDir"), new Crystal(Utils.getResourceFilename("554")));
+    solver = new CrystalSolver(new SolverParms("5", "inputDir"), new Crystal(Utils.getResourceFilename("554"), 5));
   }
 
   @Test

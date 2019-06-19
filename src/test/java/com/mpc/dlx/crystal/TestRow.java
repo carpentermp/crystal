@@ -18,8 +18,8 @@ public class TestRow {
   @Before
   public void setUp() {
     molecule = new Molecule("M00", new int[] {}, Direction.DownRight, Direction.Right, Direction.Right, Direction.UpLeft, Direction.DownLeft);
-    c554 = new Crystal(Utils.getResourceFilename("554"));
-    c59 = new Crystal(Utils.getResourceFilename("59"));
+    c554 = new Crystal(Utils.getResourceFilename("554"), molecule.size());
+    c59 = new Crystal(Utils.getResourceFilename("59"), molecule.size());
     usedIds = molecule.getUsedNodeIds(c554.getNode(2423));
     row = new Row(2423, molecule, usedIds);
   }

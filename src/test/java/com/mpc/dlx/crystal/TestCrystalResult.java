@@ -17,7 +17,7 @@ public class TestCrystalResult {
 
   @Before
   public void setUp() {
-    c554 = new Crystal(Utils.getResourceFilename("554"));
+    c554 = new Crystal(Utils.getResourceFilename("554"), 5);
     row = new Row(2423, Molecule.m05, Molecule.m05.getUsedNodeIds(c554.getNode(2423)));
     Molecule mirror = Molecule.m05.mirror(Direction.Left);
     row2 = new Row(2423, mirror, mirror.getUsedNodeIds(c554.getNode(2423)));

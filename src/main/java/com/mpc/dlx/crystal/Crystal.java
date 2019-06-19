@@ -13,7 +13,6 @@ public class Crystal {
   private static final String COORDINATES_FILENAME = "replicated_coordinates.txt";
   private static final String NEIGHBORS_BY_ORIENTATION_FILENAME = "nbo.txt";
   private static final String MIDPOINTS_FILENAME = "midpoints.txt";
-  private static final int DEFAULT_MOLECULE_SIZE = 5;
 
   private final String name;
   private final Map<Integer, Node> nodes = new HashMap<>();
@@ -24,8 +23,8 @@ public class Crystal {
   private int holeCount;
   private Node removedNode;
 
-  public Crystal(String baseDir) {
-    this(baseDir, DEFAULT_MOLECULE_SIZE, nameFromBaseDir(baseDir));
+  public Crystal(String baseDir, int moleculeSize) {
+    this(baseDir, moleculeSize, nameFromBaseDir(baseDir));
   }
 
   public Crystal(String baseDir, int moleculeSize, String name) {
