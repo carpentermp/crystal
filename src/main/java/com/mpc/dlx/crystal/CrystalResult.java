@@ -62,7 +62,33 @@ public class CrystalResult {
     if (leftCount + rightCount == 0) {
       return BUCKET_NAME_ALL;
     }
+    else if (rootMolecule2 != null && rootMolecule.getOrientation() == rootMolecule2.getOrientation()) {
+      // if both molecules have the same orientation, then return the times each molecule was used
+      String orientationLetter = rootMolecule.getOrientation().name().substring(0, 1).toLowerCase();
+      Map<String, Integer> moleculeCounts = countMolecules(rows);
+      return String.format(orientationLetter + "%1$02d" + orientationLetter + "%2$02d",
+                           getCountOfMolecule(moleculeCounts, rootMolecule),
+                           getCountOfMolecule(moleculeCounts, rootMolecule2));
+    }
     return String.format("l%1$02dr%2$02d", leftCount, rightCount);
+  }
+
+  private Map<String, Integer> countMolecules(List<Row> resultRows) {
+    Map<String, Integer> moleculeCounts = new HashMap<>();
+    for (Row row : resultRows) {
+      String molecule = row.getMolecule().getName();
+      Integer count = moleculeCounts.get(molecule);
+      if (count == null) {
+        count = 0;
+      }
+      moleculeCounts.put(molecule, ++count);
+    }
+    return moleculeCounts;
+  }
+
+  private int getCountOfMolecule(Map<String, Integer> moleculeCounts, Molecule molecule) {
+    Integer count = moleculeCounts.get(molecule.getName());
+    return count == null ? 0 : count;
   }
 
   private Map<Orientation, Integer> countOrientations(List<Row> resultRows) {
@@ -201,7 +227,7 @@ public class CrystalResult {
   }
 
   public boolean equals(Object obj) {
-    if (obj == null || !(obj instanceof CrystalResult)) {
+    if (!(obj instanceof CrystalResult)) {
       return false;
     }
     CrystalResult other = (CrystalResult) obj;

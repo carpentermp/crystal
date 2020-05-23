@@ -285,6 +285,7 @@ public class CrystalSolver {
 //    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m05).molecule2(Molecule.m06).startingCrystal(22).endingCrystal(22));
 //    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m09).crystal(426).extraHoles(5).quitAfter(SolverParms.HOUR));
 //    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m09).crystal(358));
+//    solveCrystals(new SolverParms(DEFAULT_PARMS).crystal(110).doGZip(true).molecule(Molecule.m09).molecule2(Molecule.m10));
   }
 
 }

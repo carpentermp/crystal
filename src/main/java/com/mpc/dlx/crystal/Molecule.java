@@ -245,7 +245,7 @@ public class Molecule {
   }
 
   public boolean equals(Object object) {
-    if (object == null || !(object instanceof Molecule)) {
+    if (!(object instanceof Molecule)) {
       return false;
     }
     Molecule other = (Molecule) object;
