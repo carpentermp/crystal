@@ -1,6 +1,6 @@
 package com.mpc.dlx.crystal;
 
-@SuppressWarnings({"WeakerAccess", "squid:S00115"})
+@SuppressWarnings("squid:S00115")
 public enum Direction {
 
   Right(1),

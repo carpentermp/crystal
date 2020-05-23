@@ -1,6 +1,7 @@
 package com.mpc.dlx.crystal;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.zip.GZIPOutputStream;
@@ -45,8 +46,8 @@ public class Utils {
     return filename == null ? null : getWriter(getOutputStream(filename));
   }
 
-  public static BufferedWriter getWriter(OutputStream outputStream) throws IOException {
-    return outputStream == null ? null : new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"));
+  public static BufferedWriter getWriter(OutputStream outputStream) {
+    return outputStream == null ? null : new BufferedWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8));
   }
 
   public static OutputStream getOutputStream(String filename) throws IOException {

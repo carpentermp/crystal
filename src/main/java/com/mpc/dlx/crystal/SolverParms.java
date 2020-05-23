@@ -182,6 +182,7 @@ public class SolverParms {
     return this;
   }
 
+  @SuppressWarnings("UnusedReturnValue")
   public SolverParms molecule2(Molecule molecule) {
     this.molecule2 = molecule;
     return this;
@@ -214,6 +215,7 @@ public class SolverParms {
     return this;
   }
 
+  @SuppressWarnings("UnusedReturnValue")
   public SolverParms inputDir(String inputDir) {
     this.inputDir = inputDir;
     return this;
@@ -239,10 +241,12 @@ public class SolverParms {
     return this;
   }
 
+  @SuppressWarnings("unused")
   public SolverParms quitAfter(long intervalMillis) {
     return quitTime(System.currentTimeMillis() + intervalMillis);
   }
 
+  @SuppressWarnings("UnusedReturnValue")
   public SolverParms maxSolutionCount(long maxSolutionCount) {
     this.maxSolutionCount = maxSolutionCount;
     return this;

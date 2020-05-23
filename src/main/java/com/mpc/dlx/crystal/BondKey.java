@@ -39,7 +39,7 @@ public class BondKey {
   }
 
   public boolean equals(Object o) {
-    return !(o == null || !(o instanceof BondKey)) && toString().equals(o.toString());
+    return o instanceof BondKey && toString().equals(o.toString());
   }
 
   public int hashCode() {

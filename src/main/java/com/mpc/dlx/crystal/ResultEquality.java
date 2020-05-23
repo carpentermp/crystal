@@ -12,7 +12,7 @@ public class ResultEquality {
   }
 
   public boolean equals(Object o) {
-    return !(o == null || !(o instanceof ResultEquality)) && Arrays.equals(theBytes, ((ResultEquality) o).theBytes);
+    return o instanceof ResultEquality && Arrays.equals(theBytes, ((ResultEquality) o).theBytes);
   }
 
   public int hashCode() {

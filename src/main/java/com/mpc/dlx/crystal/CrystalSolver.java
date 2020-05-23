@@ -5,7 +5,6 @@ import au.id.bjf.dlx.DLXResult;
 import au.id.bjf.dlx.DLXResultProcessor;
 import au.id.bjf.dlx.data.ColumnObject;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -49,7 +48,7 @@ public class CrystalSolver {
         columnNames.add(0, HOLES_PREFIX + i);
       }
     }
-    return columnNames.toArray(new String[columnNames.size()]);
+    return columnNames.toArray(new String[0]);
   }
 
   private List<Molecule> buildMolecules(Molecule molecule1, Molecule molecule2) {
@@ -158,6 +157,7 @@ public class CrystalSolver {
     }
   }
 
+  @SuppressWarnings("UnusedReturnValue")
   public CrystalSolver solve() {
     try {
       CrystalResultProcessor resultProcessor = new CrystalResultProcessor();
@@ -248,7 +248,7 @@ public class CrystalSolver {
     }
   }
 
-  private static void solveCrystals(SolverParms parms) throws IOException {
+  private static void solveCrystals(SolverParms parms) {
     for (int i = parms.getStartingCrystal(); i <= parms.getEndingCrystal(); i++) {
       Crystal crystal;
       try {
@@ -268,7 +268,7 @@ public class CrystalSolver {
   private static final SolverParms DEFAULT_PARMS = new SolverParms("5", "/Users/merlin/Downloads/textfiles2/")
                     .outputDir("/Users/merlin/Downloads/crystalResults");
 
-  private static void doIt(String[] args) throws IOException {
+  private static void doIt(String[] args) {
     try {
       SolverParms parms = new SolverParms(args);
       solveCrystals(parms);
@@ -279,7 +279,7 @@ public class CrystalSolver {
     }
   }
 
-  public static void main(String[] args) throws IOException {
+  public static void main(String[] args) {
     doIt(args);
 //    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.dimer).endingCrystal(10).extraHoles(1));
 //    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m05).molecule2(Molecule.m06).startingCrystal(22).endingCrystal(22));

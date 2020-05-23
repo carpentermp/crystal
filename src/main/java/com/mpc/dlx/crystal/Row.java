@@ -75,6 +75,7 @@ public class Row {
     return molecule;
   }
 
+  @SuppressWarnings("unused")
   public Set<Integer> getUsedIds() {
     return Collections.unmodifiableSet(usedIds);
   }

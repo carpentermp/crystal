@@ -63,11 +63,7 @@ public class Node {
   }
 
   public boolean equals(Object object) {
-    if (object == null || !(object instanceof Node)) {
-      return false;
-    }
-    Node other = (Node) object;
-    return id == other.id;
+    return object instanceof Node && id == ((Node) object).id;
   }
 
   public int hashCode() {

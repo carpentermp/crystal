@@ -175,7 +175,7 @@ public class Molecule {
     return this.beadIds;
   }
 
-  @SuppressWarnings({"ForLoopReplaceableByForEach", "ConstantConditions"})
+  @SuppressWarnings({"ForLoopReplaceableByForEach"})
   public Node getBeadNode(Node startingNode, int beadId) {
     Node next = startingNode;
     int directionIndex = 0;
@@ -264,7 +264,7 @@ public class Molecule {
     List<Object> parts = new ArrayList<>(buildInstructions.length + 1);
     parts.add(orientation);
     Collections.addAll(parts, buildInstructions);
-    return Objects.hash(parts.toArray(new Object[parts.size()]));
+    return Objects.hash(parts.toArray(new Object[0]));
   }
 
   public static Molecule fromNumber(int index) {
