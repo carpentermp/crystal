@@ -1,6 +1,7 @@
 package com.mpc.dlx.crystal;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
@@ -14,6 +15,7 @@ public class Crystal {
   private static final String NEIGHBORS_BY_ORIENTATION_FILENAME = "nbo.txt";
   private static final String MIDPOINTS_FILENAME = "midpoints.txt";
 
+  private final File baseDir;
   private final String name;
   private final Map<Integer, Node> nodes = new HashMap<>();
   private final Map<Integer, List<Coordinate>> coordinates;
@@ -21,28 +23,44 @@ public class Crystal {
   // map of possible bonds to their index in the midpoints.txt file
   private final Map<BondKey, Integer> bondMap;
   private int holeCount;
-  private Node removedNode;
+  private final List<Integer> removedNodeIds = new ArrayList<>();
 
-  public Crystal(String baseDir, int moleculeSize) {
-    this(baseDir, moleculeSize, nameFromBaseDir(baseDir));
+  public Crystal(String baseDirName, int moleculeSize) {
+    this(new File(baseDirName), moleculeSize);
   }
 
-  public Crystal(String baseDir, int moleculeSize, String name) {
-    this.name = name;
-    baseDir = baseDir + (baseDir.endsWith("/") ? "" : "/");
+  public Crystal(File baseDir, int moleculeSize) {
+    this(baseDir, moleculeSize, null);
+  }
+
+  public Crystal(File baseDir, int moleculeSize, Symmetry symmetry) {
+    this.name = computeName(baseDir, symmetry);
+    this.baseDir = baseDir;
     try {
-      Map<Integer, List<String>> connections = readInConnections(baseDir);
+      Map<Integer, List<String>> connections = readInConnections();
       createNodes(connections);
-      int holeCount = nodes.size() % moleculeSize;
-      if (holeCount != 0) {
-        this.removedNode = nodes.get(0);
-        removeNode(this.removedNode);
-        holeCount--;
+      if (symmetry != null) {
+        int holeCount = nodes.size() % (moleculeSize * symmetry.getRotationalSymmetry());
+        for (Integer requiredHole : symmetry.getRequiredHoles()) {
+          removeNode(getNode(requiredHole));
+          holeCount--;
+        }
+        if (holeCount % symmetry.getRotationalSymmetry() != 0) {
+          throw new IllegalStateException("Wrong number of holes for " + this.name + ". holes=" + holeCount + ". RotationalSymmetry=" + symmetry.getRotationalSymmetry() + ". No symmetrical solution of this kind is possible.");
+        }
         this.holeCount = holeCount;
       }
-      this.coordinates = readInCoordinates(baseDir);
-      this.nbo = readInNbo(baseDir);
-      this.bondMap = readInBondMap(baseDir);
+      else {
+        int holeCount = nodes.size() % moleculeSize;
+        if (holeCount != 0) {
+          removeNode(nodes.get(0));
+          holeCount--;
+          this.holeCount = holeCount;
+        }
+      }
+      this.coordinates = readInCoordinates();
+      this.nbo = readInNbo();
+      this.bondMap = readInBondMap();
       checkLinksBackAndForth();
     }
     catch (IOException e) {
@@ -66,11 +84,9 @@ public class Crystal {
     }
   }
 
-  static String nameFromBaseDir(String baseDir) {
-    if (baseDir.endsWith("/")) {
-      baseDir = baseDir.substring(0, baseDir.lastIndexOf('/'));
-    }
-    return "c" + baseDir.substring(baseDir.lastIndexOf('/') + 1);
+  static String computeName(File baseDir, Symmetry symmetry) {
+    String baseName = "c" + baseDir.getName();
+    return symmetry == null ? baseName : baseName + "_" + symmetry.getName();
   }
 
   private void removeNode(Node nodeToRemove) {
@@ -87,10 +103,19 @@ public class Crystal {
     upLeftNode.set(null, Direction.DownRight);
     upRightNode.set(null, Direction.DownLeft);
     nodes.remove(nodeToRemove.getId());
+    removedNodeIds.add(nodeToRemove.getId());
   }
 
-  public Node getRemovedNode() {
-    return removedNode;
+  /**
+   * gets all the node ids (including removed nodes) as a sorted list of ids
+   * @return all the node ids (including removed nodes) as a sorted list of ids
+   */
+  public List<Integer> getAllNodeIdsSorted() {
+    List<Integer> allNodeIds = new ArrayList<>(removedNodeIds);
+    allNodeIds.addAll(getNodeIds());
+    return allNodeIds.stream()
+      .sorted()
+      .collect(Collectors.toList());
   }
 
   private void checkLinksBackAndForth() {
@@ -114,9 +139,9 @@ public class Crystal {
     }
   }
 
-  private Map<BondKey, Integer> readInBondMap(String baseDir) throws IOException {
+  private Map<BondKey, Integer> readInBondMap() throws IOException {
     Map<BondKey, Integer> bondMap = new HashMap<>();
-    String midpointsFilename = baseDir + MIDPOINTS_FILENAME;
+    String midpointsFilename = baseDir + "/" + MIDPOINTS_FILENAME;
     String line;
     int lineNumber = 0;
     try (BufferedReader reader = new BufferedReader(new FileReader(midpointsFilename))) {
@@ -134,9 +159,9 @@ public class Crystal {
     return Integer.parseInt(string.substring(0, index));
   }
 
-  private int[][] readInNbo(String baseDir) {
+  private int[][] readInNbo() {
     try {
-      String nboFilename = baseDir + NEIGHBORS_BY_ORIENTATION_FILENAME;
+      String nboFilename = baseDir + "/" + NEIGHBORS_BY_ORIENTATION_FILENAME;
       String line;
       List<int[]> rtn = new ArrayList<>();
       try (BufferedReader reader = new BufferedReader(new FileReader(nboFilename))) {
@@ -156,8 +181,8 @@ public class Crystal {
     }
   }
 
-  private Map<Integer, List<String>> readInConnections(String baseDir) throws IOException {
-    String neighborsFile = baseDir + NEIGHBORS_FILENAME;
+  private Map<Integer, List<String>> readInConnections() throws IOException {
+    String neighborsFile = baseDir + "/" + NEIGHBORS_FILENAME;
     String line;
     try (BufferedReader reader = new BufferedReader(new FileReader(neighborsFile))) {
       Map<Integer, List<String>> connections = new HashMap<>();
@@ -174,10 +199,10 @@ public class Crystal {
     }
   }
 
-  private Map<Integer, List<Coordinate>> readInCoordinates(String baseDir) throws IOException {
+  private Map<Integer, List<Coordinate>> readInCoordinates() throws IOException {
     Map<Integer, List<Coordinate>> coordinates = new HashMap<>();
     String line;
-    try (BufferedReader reader = new BufferedReader(new FileReader(baseDir + COORDINATES_FILENAME))) {
+    try (BufferedReader reader = new BufferedReader(new FileReader(baseDir + "/" + COORDINATES_FILENAME))) {
       while ((line = reader.readLine()) != null) {
         String[] parts = line.split("\t");
         if (parts.length < 4) {

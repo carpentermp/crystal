@@ -4,15 +4,14 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * represents a candidate for placement of a molecule in the crystal
+ * represents a candidate for placement of a molecule (or list of molecules, if symmetry is required) in the crystal
  */
 @SuppressWarnings({"WeakerAccess", "squid:S1168"})
 public class Row {
 
-  private final int nodeId;
-  private final Molecule molecule;
+  private Map<Molecule, Integer> moleculeToNodeId = new LinkedHashMap<>();
   private final Set<Integer> usedIds;
-  private final Integer holeIndex;
+  private final Integer holeColumnIndex;
   private final String key;
 
   /**
@@ -22,31 +21,54 @@ public class Row {
    * @param usedIds all the column indexes of the lattice sites take by the placement of the molecule in the given place
    */
   public Row(int nodeId, Molecule molecule, Set<Integer> usedIds) {
-    this.nodeId = nodeId;
-    this.molecule = molecule;
+    moleculeToNodeId.put(molecule, nodeId);
     this.usedIds = usedIds;
-    this.holeIndex = null;
+    this.holeColumnIndex = null;
     this.key = buildKey(usedIds, null);
   }
 
-  public static String buildKey(Collection<Integer> usedIds, Integer holeIndex) {
-    if (holeIndex != null) {
-      return "h" + holeIndex + "-" + usedIds.iterator().next();
-    }
-    return Utils.join(usedIds.stream().sorted().collect(Collectors.toList()), "-");
+  /**
+   * constructor for when symmetry is required
+   * @param placements map of nodeIds to molecule that represents the placments of the molecules
+   * @param usedIds the complete set of usedIds (all molecules)
+   */
+  public Row(Map<Molecule, Integer> placements, Set<Integer> usedIds) {
+    this.moleculeToNodeId.putAll(placements);
+    this.usedIds = usedIds;
+    this.holeColumnIndex = null;
+    this.key = buildKey(usedIds, null);
   }
 
   /**
    * constructor used to create potential "holes" in the result
    * @param holeNodeId the node id of the hole
-   * @param holeIndex the "index" of the hole (to distinguish the hole from other holes)
+   * @param holeColumnIndex the "index" of the hole (to distinguish the hole from other holes)
    */
-  public Row(int holeNodeId, int holeIndex) {
-    this.nodeId = holeNodeId;
-    this.molecule = Molecule.hole;
+  public Row(int holeNodeId, int holeColumnIndex) {
+    this.moleculeToNodeId.put(Molecule.hole, holeNodeId);
     this.usedIds = new HashSet<>(Collections.singletonList(holeNodeId));
-    this.holeIndex = holeIndex;
-    this.key = buildKey(usedIds, holeIndex);
+    this.holeColumnIndex = holeColumnIndex;
+    this.key = buildKey(usedIds, holeColumnIndex);
+  }
+
+  /**
+   * constructor used to create potential "holes" in the result
+   * @param holeNodeIds the node ids of the holes being placed
+   * @param holeColumnIndex the "index" of the hole (to distinguish the hole from other holes)
+   */
+  public Row(Set<Integer> holeNodeIds, int holeColumnIndex) {
+    holeNodeIds.forEach(id -> this.moleculeToNodeId.put(Molecule.hole, id));
+    this.usedIds = new HashSet<>(holeNodeIds);
+    this.holeColumnIndex = holeColumnIndex;
+    this.key = buildKey(usedIds, holeColumnIndex);
+  }
+
+  public static String buildKey(Collection<Integer> usedIds, Integer holeColumnIndex) {
+    String joinedSortedUsedIds = Utils.join(usedIds.stream().sorted().collect(Collectors.toList()), "-");
+    if (holeColumnIndex == null) {
+      return joinedSortedUsedIds;
+    }
+    return "h" + holeColumnIndex + "-" + joinedSortedUsedIds;
   }
 
   public byte[] getBytes(String[] columns) {
@@ -62,17 +84,17 @@ public class Row {
       row[i] = (byte) (usedIds.contains(Integer.parseInt(columnName)) ? 1 : 0);
     }
     if (isHole()) {
-      row[holeIndex] = 1;
+      row[holeColumnIndex] = 1;
     }
     return row;
   }
 
-  public int getNodeId() {
-    return nodeId;
+  public int getNodeId(Molecule molecule) {
+    return moleculeToNodeId.get(molecule);
   }
 
-  public Molecule getMolecule() {
-    return molecule;
+  public Set<Molecule> getMolecules() {
+    return moleculeToNodeId.keySet();
   }
 
   @SuppressWarnings("unused")
@@ -81,7 +103,7 @@ public class Row {
   }
 
   public boolean isHole() {
-    return holeIndex != null;
+    return holeColumnIndex != null;
   }
 
   public String getKey() {

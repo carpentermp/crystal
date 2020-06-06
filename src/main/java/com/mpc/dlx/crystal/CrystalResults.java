@@ -42,7 +42,7 @@ public class CrystalResults {
 
   public CrystalResults(Molecule rootMolecule, Molecule rootMolecule2, Crystal crystal, int extraHoles, String baseDir, boolean dedup, boolean doGZip) {
     this.crystal = crystal;
-    this.nodeIds = buildNodeIdsArray();
+    this.nodeIds = crystal.getAllNodeIdsSorted();
     this.rootMolecule = rootMolecule;
     this.rootMolecule2 = rootMolecule2;
     this.extraHoles = extraHoles;
@@ -163,13 +163,15 @@ public class CrystalResults {
   private List<String> mapBonds(CrystalResult result) {
     List<String> bonds = new ArrayList<>();
     for (Row row : result.getRows()) {
-      Node startingNode = crystal.getNode(row.getNodeId());
-      List<BondKey> bondKeys = row.getMolecule().getBondKeys(startingNode);
-      List<String> bondKeyIndices = bondKeys.stream()
-        .map(crystal::getBondKeyIndex)
-        .map(Object::toString)
-        .collect(Collectors.toList());
-      bonds.addAll(bondKeyIndices);
+      for (Molecule molecule : row.getMolecules()) {
+        Node startingNode = crystal.getNode(row.getNodeId(molecule));
+        List<BondKey> bondKeys = molecule.getBondKeys(startingNode);
+        List<String> bondKeyIndices = bondKeys.stream()
+          .map(crystal::getBondKeyIndex)
+          .map(Object::toString)
+          .collect(Collectors.toList());
+        bonds.addAll(bondKeyIndices);
+      }
     }
     return bonds;
   }
@@ -177,30 +179,22 @@ public class CrystalResults {
   private List<String> mapBondTypes(CrystalResult result) {
     List<String> bondTypes = new ArrayList<>();
     for (Row row : result.getRows()) {
-      Node startingNode = crystal.getNode(row.getNodeId());
-      List<BondKey> bondKeys = row.getMolecule().getBondKeys(startingNode);
-      for (BondKey key : bondKeys) {
-        int beadId1 = result.getBeadId(key.getFromNodeId());
-        int beadId2 = result.getBeadId(key.getToNodeId());
-        if (beadId1 > beadId2) {
-          int temp = beadId1;
-          beadId1 = beadId2;
-          beadId2 = temp;
+      for (Molecule molecule : row.getMolecules()) {
+        Node startingNode = crystal.getNode(row.getNodeId(molecule));
+        List<BondKey> bondKeys = molecule.getBondKeys(startingNode);
+        for (BondKey key : bondKeys) {
+          int beadId1 = result.getBeadId(key.getFromNodeId());
+          int beadId2 = result.getBeadId(key.getToNodeId());
+          if (beadId1 > beadId2) {
+            int temp = beadId1;
+            beadId1 = beadId2;
+            beadId2 = temp;
+          }
+          bondTypes.add(beadId1 + "-" + beadId2);
         }
-        bondTypes.add(beadId1 + "-" + beadId2);
       }
     }
     return bondTypes;
-  }
-
-  private List<Integer> buildNodeIdsArray() {
-    List<Integer> nodeIds = new ArrayList<>();
-    Node removedNode = crystal.getRemovedNode();
-    if (removedNode != null) {
-      nodeIds.add(removedNode.getId());
-    }
-    nodeIds.addAll(crystal.getNodeIds().stream().sorted().collect(Collectors.toList()));
-    return nodeIds;
   }
 
   private void outputHeader(Writer writer, String headerLine) throws IOException {

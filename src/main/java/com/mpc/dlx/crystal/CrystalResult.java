@@ -76,12 +76,13 @@ public class CrystalResult {
   private Map<String, Integer> countMolecules(List<Row> resultRows) {
     Map<String, Integer> moleculeCounts = new HashMap<>();
     for (Row row : resultRows) {
-      String molecule = row.getMolecule().getName();
-      Integer count = moleculeCounts.get(molecule);
-      if (count == null) {
-        count = 0;
+      for (Molecule molecule : row.getMolecules()) {
+        Integer count = moleculeCounts.get(molecule.getName());
+        if (count == null) {
+          count = 0;
+        }
+        moleculeCounts.put(molecule.getName(), ++count);
       }
-      moleculeCounts.put(molecule, ++count);
     }
     return moleculeCounts;
   }
@@ -94,12 +95,14 @@ public class CrystalResult {
   private Map<Orientation, Integer> countOrientations(List<Row> resultRows) {
     Map<Orientation, Integer> orientationCounts = new HashMap<>();
     for (Row row : resultRows) {
-      Orientation orientation = row.getMolecule().getOrientation();
-      Integer count = orientationCounts.get(orientation);
-      if (count == null) {
-        count = 0;
+      for (Molecule molecule : row.getMolecules()) {
+        Orientation orientation = molecule.getOrientation();
+        Integer count = orientationCounts.get(orientation);
+        if (count == null) {
+          count = 0;
+        }
+        orientationCounts.put(orientation, ++count);
       }
-      orientationCounts.put(orientation, ++count);
     }
     return orientationCounts;
   }
@@ -118,8 +121,10 @@ public class CrystalResult {
     Map<String, Integer> adjacencyCountMap = buildAdjacencyCountMap(rootMolecule2 == null ? nodeToBeadIdsNoHigh : nodeToBeadIdsHigh);
     for (Row row : rows) {
       if (!row.isHole()) {
-        // subtract the counts for adjacencies within the molecules--they don't count
-        row.getMolecule().subtractInternalAdjacencies(adjacencyCountMap, isHighMolecule(row.getMolecule()));
+        for (Molecule molecule : row.getMolecules()) {
+          // subtract the counts for adjacencies within the molecules--they don't count
+          molecule.subtractInternalAdjacencies(adjacencyCountMap, isHighMolecule(molecule));
+        }
       }
     }
     List<Integer> adjacencyCounts = new ArrayList<>();
@@ -195,14 +200,15 @@ public class CrystalResult {
       if (row.isHole()) {
         continue;
       }
-      Molecule molecule = row.getMolecule();
-      int rightHandOffset = computeRightHandOffset(molecule);
-      Node startingNode = crystal.getNode(row.getNodeId());
-      for (int i = 0; i < molecule.size(); i++) {
-        int beadId = i + 1;
-        Node beadNode = molecule.getBeadNode(startingNode, beadId);
-        this.nodeToBeadIdsHigh.put(beadNode, beadId + rightHandOffset);
-        this.nodeToBeadIdsNoHigh.put(beadNode, beadId);
+      for (Molecule molecule : row.getMolecules()) {
+        int rightHandOffset = computeRightHandOffset(molecule);
+        Node startingNode = crystal.getNode(row.getNodeId(molecule));
+        for (int i = 0; i < molecule.size(); i++) {
+          int beadId = i + 1;
+          Node beadNode = molecule.getBeadNode(startingNode, beadId);
+          this.nodeToBeadIdsHigh.put(beadNode, beadId + rightHandOffset);
+          this.nodeToBeadIdsNoHigh.put(beadNode, beadId);
+        }
       }
     }
   }

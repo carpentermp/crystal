@@ -1,6 +1,6 @@
 package com.mpc.dlx.crystal;
 
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "UnusedReturnValue"})
 public class SolverParms {
 
   public static final long HOUR = 1000 * 3600;
@@ -18,6 +18,7 @@ public class SolverParms {
   private boolean doGZip = false;
   private long quitTime = NEVER;
   private long maxSolutionCount = INFINITE;
+  private boolean requireSymmetry = false;
 
   public SolverParms(String... args) {
     for (int i = 0; i < args.length; i++) {
@@ -46,6 +47,9 @@ public class SolverParms {
           break;
         case "-g":
           doGZip(true);
+          break;
+        case "-y":
+          requireSymmetry(true);
           break;
         default:
           if (molecule == null) {
@@ -131,6 +135,7 @@ public class SolverParms {
     this.doGZip = parms.doGZip;
     this.quitTime = parms.quitTime;
     this.maxSolutionCount = parms.maxSolutionCount;
+    this.requireSymmetry = parms.requireSymmetry;
   }
 
   public Molecule getMolecule() {
@@ -177,12 +182,15 @@ public class SolverParms {
     return maxSolutionCount;
   }
 
+  public boolean isRequireSymmetry() {
+    return requireSymmetry;
+  }
+
   public SolverParms molecule(Molecule molecule) {
     this.molecule = molecule;
     return this;
   }
 
-  @SuppressWarnings("UnusedReturnValue")
   public SolverParms molecule2(Molecule molecule) {
     this.molecule2 = molecule;
     return this;
@@ -215,7 +223,6 @@ public class SolverParms {
     return this;
   }
 
-  @SuppressWarnings("UnusedReturnValue")
   public SolverParms inputDir(String inputDir) {
     this.inputDir = inputDir;
     return this;
@@ -246,9 +253,13 @@ public class SolverParms {
     return quitTime(System.currentTimeMillis() + intervalMillis);
   }
 
-  @SuppressWarnings("UnusedReturnValue")
   public SolverParms maxSolutionCount(long maxSolutionCount) {
     this.maxSolutionCount = maxSolutionCount;
+    return this;
+  }
+
+  public SolverParms requireSymmetry(boolean requireSymmetry) {
+    this.requireSymmetry = requireSymmetry;
     return this;
   }
 
@@ -296,6 +307,7 @@ public class SolverParms {
     System.out.println("  -g             gzip output file(s)");
     System.out.println("  -q num{m|h|d}  quit after period of time e.g. -q 12h");
     System.out.println("  -m num         quit after {num} solutions have been found");
+    System.out.println("  -y             require symmetry in all solutions");
   }
 
 }
