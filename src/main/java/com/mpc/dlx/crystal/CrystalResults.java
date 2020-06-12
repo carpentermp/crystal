@@ -121,16 +121,21 @@ public class CrystalResults {
     }
     System.out.println();
     try {
-      beadsWriter.close();
-      adjacenciesWriter.close();
-      beadsWriter.close();
-      bondsWriter.close();
-      bondTypesWriter.close();
-      tagsWriter.close();
-      ratiosWriter.close();
+      safeClose(beadsWriter);
+      safeClose(adjacenciesWriter);
+      safeClose(bondsWriter);
+      safeClose(bondTypesWriter);
+      safeClose(tagsWriter);
+      safeClose(ratiosWriter);
     }
     catch (IOException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  private void safeClose(Writer writer) throws IOException {
+    if (writer != null) {
+      writer.close();
     }
   }
 

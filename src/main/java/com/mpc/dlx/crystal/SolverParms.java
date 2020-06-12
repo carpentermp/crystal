@@ -1,5 +1,11 @@
 package com.mpc.dlx.crystal;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @SuppressWarnings({"WeakerAccess", "UnusedReturnValue"})
 public class SolverParms {
 
@@ -7,8 +13,7 @@ public class SolverParms {
   public static final long NEVER = Long.MAX_VALUE;
   public static final long INFINITE = Long.MAX_VALUE;
 
-  private Molecule molecule = null;
-  private Molecule molecule2 = null;
+  private List<Molecule> molecules = new ArrayList<>();
   private String inputDir = null;
   private String outputDir = null;
   private int startingCrystal = 0;
@@ -56,7 +61,7 @@ public class SolverParms {
           chooseSymmetry(args[++i]);
           break;
         default:
-          if (molecule == null) {
+          if (molecules.isEmpty()) {
             parseMoleculeParameter(arg);
           }
           else {
@@ -65,56 +70,42 @@ public class SolverParms {
           break;
       }
     }
-    if (molecule == null) {
-      throw new IllegalArgumentException("Molecule must be specified.");
+    if (molecules.isEmpty()) {
+      throw new IllegalArgumentException("A molecule must be specified.");
     }
     if (inputDir == null) {
       throw new IllegalArgumentException("Input directory must be specified.");
     }
-    if ((extraHoles % molecule.size()) != 0) {
+    if ((extraHoles % molecules.get(0).size()) != 0) {
       throw new IllegalArgumentException("Hole count must be multiple of molecule size");
     }
   }
 
   private void parseMoleculeParameter(String parm) {
-    try {
-      int moleculeNumber = Integer.parseInt(parm);
-      molecule(Molecule.fromNumber(moleculeNumber));
+    String[] parts = parm.toLowerCase().split("_");
+    for (String part : parts) {
+      addMolecule(parseMolecule(part));
     }
-    catch (NumberFormatException e) {
-      String[] parts = parm.split("_");
-      Molecule m1 = parseMolecule(parts[0]);
-      Molecule m2 = null;
-      if (parts.length > 1) {
-        m2 = parseMolecule(parts[1]);
-        if (m1.equals(m2)) {
-          throw new IllegalArgumentException("both molecules must not be the same one!");
-        }
-        if (m1.size() != m2.size()) {
-          throw new IllegalArgumentException("both molecules must be the same size");
-        }
-        if (m1.getName().compareTo(m2.getName()) > 0) {
-          Molecule temp = m1;
-          m1 = m2;
-          m2 = temp;
-        }
-      }
-      molecule(m1);
-      if (m2 != null) {
-        molecule2(m2);
-      }
+    this.molecules.sort(Comparator.comparing(Molecule::getName));
+    Molecule molecule = molecules.get(0);
+    // if they didn't give us something like "m05l_m10r", then do the chiral opposite(s) of the molecule(s)
+    if (molecule.isChiral() && (molecules.size() == 1 || !endsWithOrientation(parts[0]))) {
+      List<Molecule> opposites = molecules.stream()
+        .map(m -> m.mirror(Direction.Right))
+        .collect(Collectors.toList());
+      molecules.addAll(opposites);
     }
   }
 
   private static Molecule parseMolecule(String moleculeStr) {
-    if (moleculeStr.toLowerCase().equals("dimer")) {
+    if (moleculeStr.equals("dimer")) {
       return Molecule.dimer;
     }
     if (moleculeStr.startsWith("m")) {
-      moleculeStr = moleculeStr.substring(1).toLowerCase();
+      moleculeStr = moleculeStr.substring(1);
     }
     boolean isRight = false;
-    if (moleculeStr.endsWith("l") || moleculeStr.endsWith("r")) {
+    if (endsWithOrientation(moleculeStr)) {
       if (moleculeStr.endsWith("r")) {
         isRight = true;
       }
@@ -127,9 +118,12 @@ public class SolverParms {
     return molecule;
   }
 
+  private static boolean endsWithOrientation(String moleculeStr) {
+    return moleculeStr.endsWith("l") || moleculeStr.endsWith("r");
+  }
+
   public SolverParms(SolverParms parms) {
-    this.molecule = parms.molecule;
-    this.molecule2 = parms.molecule2;
+    this.molecules.addAll(parms.molecules);
     this.inputDir = parms.inputDir;
     this.outputDir = parms.outputDir;
     this.startingCrystal = parms.startingCrystal;
@@ -140,14 +134,15 @@ public class SolverParms {
     this.quitTime = parms.quitTime;
     this.maxSolutionCount = parms.maxSolutionCount;
     this.requireSymmetry = parms.requireSymmetry;
+    this.symmetryName = parms.symmetryName;
   }
 
-  public Molecule getMolecule() {
-    return molecule;
+  public List<Molecule> getMolecules() {
+    return Collections.unmodifiableList(molecules);
   }
 
-  public Molecule getMolecule2() {
-    return molecule2;
+  public int getMoleculeSize() {
+    return molecules.get(0).size();
   }
 
   public int getStartingCrystal() {
@@ -195,13 +190,22 @@ public class SolverParms {
   }
 
   public SolverParms molecule(Molecule molecule) {
-    this.molecule = molecule;
+    molecules.clear();
+    addMolecule(molecule);
+    if (molecule.isChiral()) {
+      addMolecule(molecule.mirror(Direction.Right));
+    }
     return this;
   }
 
-  public SolverParms molecule2(Molecule molecule) {
-    this.molecule2 = molecule;
-    return this;
+  private void addMolecule(Molecule molecule) {
+    if (molecules.contains(molecule)) {
+      throw new IllegalArgumentException("All given molecules must be different!");
+    }
+    if (!molecules.isEmpty() && molecule.size() != molecules.get(0).size()) {
+      throw new IllegalArgumentException("All molecules must be the same size!");
+    }
+    molecules.add(molecule);
   }
 
   public SolverParms crystal(int crystal) {
@@ -309,7 +313,8 @@ public class SolverParms {
     System.out.println("Usage: java -jar crystal.jar [options] molecule(s) inputDir");
     System.out.println("  molecule(s) parameter should be one of:");
     System.out.println("      a number between 1 and 22, or...");
-    System.out.println("      a string in this form: m09R_m10L or...");
+    System.out.println("      a string in this form: m09r_m10l or...");
+    System.out.println("      a string in this form: m09_m10 or...");
     System.out.println("      the word 'dimer'");
     System.out.println("  inputDir points to parent directory where all crystal information is stored");
     System.out.println("  Options:");

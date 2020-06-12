@@ -34,8 +34,9 @@ public class CrystalSolver {
   }
 
   public CrystalSolver(SolverParms parms, Crystal crystal, Symmetry symmetry) {
-    this.rootMolecule = parms.getMolecule();
-    this.rootMolecule2 = parms.getMolecule2();
+    // todo
+    this.rootMolecule = parms.getMolecules().get(0);
+    this.rootMolecule2 = parms.getMolecules().size() > 1 ? parms.getMolecules().get(1) : null;
     this.crystal = crystal;
     this.symmetry = symmetry;
     this.extraHoles = parms.getExtraHoles();
@@ -70,7 +71,7 @@ public class CrystalSolver {
   }
 
   private List<Molecule> buildMolecules(Molecule molecule1, Molecule molecule2) {
-    if (molecule2 == null && (molecule1.getOrientation() == Orientation.Left || molecule1.getOrientation() == Orientation.Right)) {
+    if (molecule2 == null && molecule1.isChiral()) {
       molecule2 = molecule1.mirror(Direction.Right);
     }
     List<Molecule> moleculeVariants = getMoleculeVariants(molecule1);
@@ -321,7 +322,7 @@ public class CrystalSolver {
             if (parms.getSymmetryName() != null && !entry.getKey().equals(parms.getSymmetryName())) {
               continue;
             }
-            Crystal crystal = new Crystal(baseDir, parms.getMolecule().size(), entry.getValue());
+            Crystal crystal = new Crystal(baseDir, parms.getMoleculeSize(), entry.getValue());
             new CrystalSolver(parms, crystal, entry.getValue()).solve();
           }
           catch (NoSolutionsException e) {
@@ -330,12 +331,12 @@ public class CrystalSolver {
         }
       }
       else {
-        Crystal crystal = new Crystal(baseDir, parms.getMolecule().size());
+        Crystal crystal = new Crystal(baseDir, parms.getMoleculeSize());
         new CrystalSolver(parms, crystal).solve();
       }
     }
     catch (RuntimeException e) {
-      System.out.println("Failure solving crystal c" + baseDir.getName() + "-" + parms.getMolecule().getName() + " because of: " + e.getClass() + ": " + e.getLocalizedMessage());
+      System.out.println("Failure solving crystal c" + baseDir.getName() + "-" + parms.getMolecules().get(0).getName() + " because of: " + e.getClass() + ": " + e.getLocalizedMessage());
       if (!(e instanceof IllegalArgumentException)) {
         e.printStackTrace();
       }
@@ -359,7 +360,7 @@ public class CrystalSolver {
   public static void main(String[] args) {
     doIt(args);
 //    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.dimer).endingCrystal(10).extraHoles(1));
-//    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m05).molecule2(Molecule.m06).startingCrystal(22).endingCrystal(22));
+//    solveCrystals(new SolverParms("m05l_m06l", "/Users/merlin/Downloads/textfiles2/").crystal(22));
 //    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m09).crystal(426).extraHoles(5).quitAfter(SolverParms.HOUR));
 //    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m09).crystal(358));
 //    solveCrystals(new SolverParms(DEFAULT_PARMS).crystal(110).doGZip(true).molecule(Molecule.m09).molecule2(Molecule.m10));

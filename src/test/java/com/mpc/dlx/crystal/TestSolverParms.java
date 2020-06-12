@@ -1,6 +1,5 @@
 package com.mpc.dlx.crystal;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -10,7 +9,7 @@ public class TestSolverParms {
   @Test
   public void testSolverParms() {
     SolverParms parms = new SolverParms("5", "inputDir");
-    assertEquals(Molecule.m05, parms.getMolecule());
+    assertEquals(Molecule.m05, parms.getMolecules().get(0));
     assertEquals("inputDir", parms.getInputDir());
     assertNull(parms.getOutputDir());
     assertEquals(0, parms.getStartingCrystal());
@@ -31,7 +30,7 @@ public class TestSolverParms {
       .quitTime(now)
       .maxSolutionCount(1000);
     SolverParms parms2 = new SolverParms(parms);
-    assertEquals(Molecule.m01, parms2.getMolecule());
+    assertEquals(Molecule.m01, parms2.getMolecules().get(0));
     assertEquals("inputDir", parms2.getInputDir());
     assertEquals("outputDir", parms2.getOutputDir());
     assertEquals(10, parms2.getStartingCrystal());
@@ -46,7 +45,7 @@ public class TestSolverParms {
   @Test
   public void testSolverParmsWithArgs() {
     SolverParms parms = new SolverParms("-o outputDir -s 10 -e 20 -d -h 5 -g -q 12h -m 1000 1 inputDir".split(" "));
-    assertEquals(Molecule.m01, parms.getMolecule());
+    assertEquals(Molecule.m01, parms.getMolecules().get(0));
     assertEquals("inputDir", parms.getInputDir());
     assertEquals("outputDir", parms.getOutputDir());
     assertEquals(10, parms.getStartingCrystal());
@@ -65,11 +64,31 @@ public class TestSolverParms {
   @Test
   public void testSolverParmsWithCompoundMoleculeParm() {
     SolverParms parms = new SolverParms("m09r_m10l", "inputDir");
-    assertEquals(Molecule.m09.mirror(Direction.Right), parms.getMolecule());
-    assertEquals(Molecule.m10, parms.getMolecule2());
+    assertEquals(Molecule.m09.mirror(Direction.Right), parms.getMolecules().get(0));
+    assertEquals(Molecule.m10, parms.getMolecules().get(1));
     parms = new SolverParms("m10l_m09r", "inputDir");
-    assertEquals(Molecule.m09.mirror(Direction.Right), parms.getMolecule());
-    assertEquals(Molecule.m10, parms.getMolecule2());
+    assertEquals(Molecule.m09.mirror(Direction.Right), parms.getMolecules().get(0));
+    assertEquals(Molecule.m10, parms.getMolecules().get(1));
+  }
+
+  @Test
+  public void testSolverParmsWithCompountChiralMoleculeParm() {
+    SolverParms parms = new SolverParms("m09_m10", "inputDir");
+    assertEquals(Molecule.m09, parms.getMolecules().get(0));
+    assertEquals(Molecule.m10, parms.getMolecules().get(1));
+    assertEquals(Molecule.m09.mirror(Direction.Right), parms.getMolecules().get(2));
+    assertEquals(Molecule.m10.mirror(Direction.Right), parms.getMolecules().get(3));
+
+    parms = new SolverParms("m05l_m06l", "/Users/merlin/Downloads/textfiles2/").crystal(22);
+    System.out.println();
+
+  }
+
+  @Test
+  public void testSymmetry() {
+    SolverParms parms = new SolverParms("m010", "inputDir").chooseSymmetry("p3");
+    assertTrue(parms.isRequireSymmetry());
+    assertEquals("p3", parms.getSymmetryName());
   }
 
   @Test

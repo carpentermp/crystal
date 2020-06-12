@@ -148,6 +148,10 @@ public class Molecule {
     return orientation;
   }
 
+  public boolean isChiral() {
+    return orientation == Orientation.Left || orientation == Orientation.Right;
+  }
+
   public Direction getRotation() {
     return rotation;
   }
