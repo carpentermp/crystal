@@ -19,6 +19,7 @@ public class SolverParms {
   private long quitTime = NEVER;
   private long maxSolutionCount = INFINITE;
   private boolean requireSymmetry = false;
+  private String symmetryName = null;
 
   public SolverParms(String... args) {
     for (int i = 0; i < args.length; i++) {
@@ -50,6 +51,9 @@ public class SolverParms {
           break;
         case "-y":
           requireSymmetry(true);
+          break;
+        case "-p":
+          chooseSymmetry(args[++i]);
           break;
         default:
           if (molecule == null) {
@@ -186,6 +190,10 @@ public class SolverParms {
     return requireSymmetry;
   }
 
+  public String getSymmetryName() {
+    return symmetryName;
+  }
+
   public SolverParms molecule(Molecule molecule) {
     this.molecule = molecule;
     return this;
@@ -263,6 +271,12 @@ public class SolverParms {
     return this;
   }
 
+  public SolverParms chooseSymmetry(String symmetryName) {
+    this.requireSymmetry = true;
+    this.symmetryName = symmetryName;
+    return this;
+  }
+
   private static long getQuitTime(String parm) {
     try {
       char ch = parm.charAt(parm.length() - 1);
@@ -308,6 +322,7 @@ public class SolverParms {
     System.out.println("  -q num{m|h|d}  quit after period of time e.g. -q 12h");
     System.out.println("  -m num         quit after {num} solutions have been found");
     System.out.println("  -y             require symmetry in all solutions");
+    System.out.println("  -p type        solve with a specific symmetry. 'type' is name of the symmetry to use e.g. p3");
   }
 
 }

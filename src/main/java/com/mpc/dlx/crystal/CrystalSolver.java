@@ -237,7 +237,7 @@ public class CrystalSolver {
       List<List<Row>> rowSets = convertResultToRowSets(dlxResult);
       rowSets.forEach(results::addResult);
       if (results.size() != lastOutput && results.size() % 100 == 0) {
-        System.out.println("results=" + results.size());
+        System.out.println("results so far=" + results.size());
         lastOutput = results.size();
       }
       // keep going unless it's time to quit
@@ -318,6 +318,9 @@ public class CrystalSolver {
         }
         for (Map.Entry<String, Symmetry> entry : symmetries.entrySet()) {
           try {
+            if (parms.getSymmetryName() != null && !entry.getKey().equals(parms.getSymmetryName())) {
+              continue;
+            }
             Crystal crystal = new Crystal(baseDir, parms.getMolecule().size(), entry.getValue());
             new CrystalSolver(parms, crystal, entry.getValue()).solve();
           }
@@ -354,7 +357,7 @@ public class CrystalSolver {
   }
 
   public static void main(String[] args) {
-//    doIt(args);
+    doIt(args);
 //    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.dimer).endingCrystal(10).extraHoles(1));
 //    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m05).molecule2(Molecule.m06).startingCrystal(22).endingCrystal(22));
 //    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m09).crystal(426).extraHoles(5).quitAfter(SolverParms.HOUR));
@@ -366,16 +369,20 @@ public class CrystalSolver {
 
 //    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m09).crystal(166));
 //    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m09).crystal(166).requireSymmetry(true));
-    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m10).crystal(150).requireSymmetry(true));
-    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m09).crystal(150).requireSymmetry(true));
-    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m08).crystal(150).requireSymmetry(true));
-    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m07).crystal(150).requireSymmetry(true));
-    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m06).crystal(150).requireSymmetry(true));
-    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m05).crystal(150).requireSymmetry(true));
-    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m04).crystal(150).requireSymmetry(true));
-    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m03).crystal(150).requireSymmetry(true));
-    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m02).crystal(150).requireSymmetry(true));
-    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m01).crystal(150).requireSymmetry(true));
+
+//    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m10).crystal(150).requireSymmetry(true));
+//    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m09).crystal(150).requireSymmetry(true));
+//    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m08).crystal(150).requireSymmetry(true));
+//    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m07).crystal(150).requireSymmetry(true));
+//    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m06).crystal(150).requireSymmetry(true));
+//    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m05).crystal(150).requireSymmetry(true));
+//    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m04).crystal(150).requireSymmetry(true));
+//    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m03).crystal(150).requireSymmetry(true));
+//    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m02).crystal(150).requireSymmetry(true));
+//    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m01).crystal(150).requireSymmetry(true));
+
+//    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m10).crystal(107).requireSymmetry(true));
+//    solveCrystals(new SolverParms(DEFAULT_PARMS).molecule(Molecule.m05).crystal(555).chooseSymmetry("p3").extraHoles(15));
 
   }
 
