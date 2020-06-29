@@ -26,14 +26,15 @@ public class TestCrystalResult {
 
   @Test
   public void testGetBeadId() {
-    CrystalResult result = new CrystalResult(c554, Molecule.m05, null, Collections.singletonList(row));
+    RootMolecules rootMolecules = new RootMolecules(Molecule.m05, null, true);
+    CrystalResult result = new CrystalResult(c554, rootMolecules, Collections.singletonList(row));
     assertEquals(1, result.getBeadId(2423));
     assertEquals(2, result.getBeadId(2463));
     assertEquals(3, result.getBeadId(2503));
     assertEquals(4, result.getBeadId(864));
     assertEquals(5, result.getBeadId(944));
 
-    CrystalResult result2 = new CrystalResult(c554, Molecule.m05, null, Collections.singletonList(row2));
+    CrystalResult result2 = new CrystalResult(c554, rootMolecules, Collections.singletonList(row2));
     assertEquals(6, result2.getBeadId(2423));
     assertEquals(7, result2.getBeadId(2463));
     assertEquals(8, result2.getBeadId(2503));
@@ -43,14 +44,16 @@ public class TestCrystalResult {
 
   @Test
   public void testGetBeadIdForDimer() {
-    CrystalResult result = new CrystalResult(c554, Molecule.dimer, null, Collections.singletonList(dimerRow));
+    RootMolecules rootMolecules = new RootMolecules(Molecule.dimer, null, false);
+    CrystalResult result = new CrystalResult(c554, rootMolecules, Collections.singletonList(dimerRow));
     assertEquals(1, result.getBeadId(2423));
     assertEquals(2, result.getBeadId(2463));
   }
 
   @Test
   public void testBuildAdjacencyCountMap() {
-    CrystalResult result = new CrystalResult(c554, Molecule.m05, null, Collections.singletonList(row));
+    RootMolecules rootMolecules = new RootMolecules(Molecule.m05, null, true);
+    CrystalResult result = new CrystalResult(c554, rootMolecules, Collections.singletonList(row));
     List<Integer> adjacencyCounts = result.getAdjacencyCounts();
     assertEquals(15, adjacencyCounts.size());
     assertEquals(0, (int) adjacencyCounts.get(0)); // 1-1
@@ -72,7 +75,8 @@ public class TestCrystalResult {
 
   @Test
   public void testBuildAdjacencyCountMapForDimer() {
-    CrystalResult result = new CrystalResult(c554, Molecule.dimer, null, Collections.singletonList(dimerRow));
+    RootMolecules rootMolecules = new RootMolecules(Molecule.dimer, null, false);
+    CrystalResult result = new CrystalResult(c554, rootMolecules, Collections.singletonList(dimerRow));
     List<Integer> adjacencyCounts = result.getAdjacencyCounts();
     assertEquals(3, adjacencyCounts.size());
     assertEquals(0, (int) adjacencyCounts.get(0)); // 1-1

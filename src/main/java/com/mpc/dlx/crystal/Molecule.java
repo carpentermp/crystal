@@ -152,6 +152,13 @@ public class Molecule {
     return orientation == Orientation.Left || orientation == Orientation.Right;
   }
 
+  public Molecule enantiomer() {
+    if (!isChiral()) {
+      throw new IllegalStateException("This molecule has no enantiomer");
+    }
+    return mirror(Direction.Right);
+  }
+
   public Direction getRotation() {
     return rotation;
   }

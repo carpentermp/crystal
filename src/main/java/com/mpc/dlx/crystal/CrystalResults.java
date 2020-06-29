@@ -14,8 +14,7 @@ public class CrystalResults {
   private static final String FN_TAGS = "tags.txt";
   private static final String FN_RATIOS = "ratios.txt";
 
-  private final Molecule rootMolecule;
-  private final Molecule rootMolecule2;
+  private final RootMolecules rootMolecules;
   private final Crystal crystal;
   private final List<Integer> nodeIds; // sorted list of nodes in the crystal unit cell
   private final int extraHoles;
@@ -40,11 +39,10 @@ public class CrystalResults {
   private BufferedWriter tagsWriter;
   private BufferedWriter ratiosWriter;
 
-  public CrystalResults(Molecule rootMolecule, Molecule rootMolecule2, Crystal crystal, int extraHoles, String baseDir, boolean dedup, boolean doGZip) {
+  public CrystalResults(RootMolecules rootMolecules, Crystal crystal, int extraHoles, String baseDir, boolean dedup, boolean doGZip) {
     this.crystal = crystal;
     this.nodeIds = crystal.getAllNodeIdsSorted();
-    this.rootMolecule = rootMolecule;
-    this.rootMolecule2 = rootMolecule2;
+    this.rootMolecules = rootMolecules;
     this.extraHoles = extraHoles;
     this.baseDir = baseDir;
     this.dedup = dedup;
@@ -56,7 +54,7 @@ public class CrystalResults {
 
   private void prepareForWritingResults() {
     try {
-      this.moleculeDir = Utils.addTrailingSlash(Utils.createSubDir(baseDir, computeMoleculeDir(rootMolecule, rootMolecule2)).getAbsolutePath());
+      this.moleculeDir = Utils.addTrailingSlash(Utils.createSubDir(baseDir, rootMolecules.getName()).getAbsolutePath());
       this.outputDir = Utils.addTrailingSlash(Utils.createSubDir(moleculeDir, getOutputDirName()).getAbsolutePath());
       this.beadsFn = createFn(FN_BEADS);
       this.adjacenciesFn = createFn(FN_ADJACENCIES);
@@ -71,31 +69,16 @@ public class CrystalResults {
       this.tagsWriter = Utils.getWriter(tagsFn);
       this.ratiosWriter = Utils.getWriter(ratiosFn);
       outputHeader(beadsWriter, Utils.join(nodeIds, " "));
-      outputHeader(adjacenciesWriter, getAdjacencyHeader());
+      outputHeader(adjacenciesWriter, rootMolecules.getAdjacencyHeader());
     }
     catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
-  private String getAdjacencyHeader() {
-    return Utils.join(rootMolecule2 == null ? rootMolecule.getAdjacencyOrder() : rootMolecule.getInterAdjacencyOrder(), " ");
-  }
-
-  static String computeMoleculeDir(Molecule rootMolecule, Molecule rootMolecule2) {
-    if (rootMolecule2 == null) {
-      return rootMolecule.getName();
-    }
-    return getMoleculeNameWithOrientation(rootMolecule) + "_" + getMoleculeNameWithOrientation(rootMolecule2);
-  }
-
-  private static String getMoleculeNameWithOrientation(Molecule molecule) {
-    return molecule.getName() + molecule.getOrientation().name().substring(0, 1);
-  }
-
   public void addResult(List<Row> rowSet) {
     try {
-      CrystalResult result = new CrystalResult(crystal, rootMolecule, rootMolecule2, rowSet);
+      CrystalResult result = new CrystalResult(crystal, rootMolecules, rowSet);
       if (dedup && resultsSeen.contains(result.getEquality())) {
         return;
       }

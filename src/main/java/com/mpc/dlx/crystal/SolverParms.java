@@ -1,11 +1,5 @@
 package com.mpc.dlx.crystal;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.stream.Collectors;
-
 @SuppressWarnings({"WeakerAccess", "UnusedReturnValue"})
 public class SolverParms {
 
@@ -13,7 +7,7 @@ public class SolverParms {
   public static final long NEVER = Long.MAX_VALUE;
   public static final long INFINITE = Long.MAX_VALUE;
 
-  private List<Molecule> molecules = new ArrayList<>();
+  private RootMolecules rootMolecules;
   private String inputDir = null;
   private String outputDir = null;
   private int startingCrystal = 0;
@@ -61,7 +55,7 @@ public class SolverParms {
           chooseSymmetry(args[++i]);
           break;
         default:
-          if (molecules.isEmpty()) {
+          if (rootMolecules == null) {
             parseMoleculeParameter(arg);
           }
           else {
@@ -70,31 +64,32 @@ public class SolverParms {
           break;
       }
     }
-    if (molecules.isEmpty()) {
+    if (rootMolecules == null) {
       throw new IllegalArgumentException("A molecule must be specified.");
     }
     if (inputDir == null) {
       throw new IllegalArgumentException("Input directory must be specified.");
     }
-    if ((extraHoles % molecules.get(0).size()) != 0) {
+    if (extraHoles % rootMolecules.moleculeSize() != 0) {
       throw new IllegalArgumentException("Hole count must be multiple of molecule size");
     }
   }
 
   private void parseMoleculeParameter(String parm) {
     String[] parts = parm.toLowerCase().split("_");
-    for (String part : parts) {
-      addMolecule(parseMolecule(part));
+    Molecule molecule1 = parseMolecule(parts[0]);
+    Molecule molecule2 = null;
+    boolean doEnantiomer = false;
+    if (parts.length > 1) {
+      molecule2 = parseMolecule(parts[1]);
+      if (!endsWithOrientation(parts[1])) {
+        doEnantiomer = true;
+      }
     }
-    this.molecules.sort(Comparator.comparing(Molecule::getName));
-    Molecule molecule = molecules.get(0);
-    // if they didn't give us something like "m05l_m10r", then do the chiral opposite(s) of the molecule(s)
-    if (molecule.isChiral() && (molecules.size() == 1 || !endsWithOrientation(parts[0]))) {
-      List<Molecule> opposites = molecules.stream()
-        .map(m -> m.mirror(Direction.Right))
-        .collect(Collectors.toList());
-      molecules.addAll(opposites);
+    else {
+      doEnantiomer = molecule1.isChiral();
     }
+    this.rootMolecules = new RootMolecules(molecule1, molecule2, doEnantiomer);
   }
 
   private static Molecule parseMolecule(String moleculeStr) {
@@ -123,7 +118,7 @@ public class SolverParms {
   }
 
   public SolverParms(SolverParms parms) {
-    this.molecules.addAll(parms.molecules);
+    this.rootMolecules = parms.rootMolecules;
     this.inputDir = parms.inputDir;
     this.outputDir = parms.outputDir;
     this.startingCrystal = parms.startingCrystal;
@@ -137,12 +132,12 @@ public class SolverParms {
     this.symmetryName = parms.symmetryName;
   }
 
-  public List<Molecule> getMolecules() {
-    return Collections.unmodifiableList(molecules);
+  public RootMolecules getRootMolecules() {
+    return rootMolecules;
   }
 
   public int getMoleculeSize() {
-    return molecules.get(0).size();
+    return rootMolecules.moleculeSize();
   }
 
   public int getStartingCrystal() {
@@ -190,22 +185,8 @@ public class SolverParms {
   }
 
   public SolverParms molecule(Molecule molecule) {
-    molecules.clear();
-    addMolecule(molecule);
-    if (molecule.isChiral()) {
-      addMolecule(molecule.mirror(Direction.Right));
-    }
+    this.rootMolecules = new RootMolecules(molecule, null, molecule.isChiral());
     return this;
-  }
-
-  private void addMolecule(Molecule molecule) {
-    if (molecules.contains(molecule)) {
-      throw new IllegalArgumentException("All given molecules must be different!");
-    }
-    if (!molecules.isEmpty() && molecule.size() != molecules.get(0).size()) {
-      throw new IllegalArgumentException("All molecules must be the same size!");
-    }
-    molecules.add(molecule);
   }
 
   public SolverParms crystal(int crystal) {

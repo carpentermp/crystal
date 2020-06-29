@@ -1,6 +1,7 @@
 package com.mpc.dlx.crystal;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -10,22 +11,20 @@ public class CrystalResult {
   private static final String BUCKET_NAME_ALL = "all";
 
   private final Crystal crystal;
-  private final Molecule rootMolecule;
-  private final Molecule rootMolecule2;
+  private final RootMolecules rootMolecules;
   private final List<Row> rows;
   private final String bucketName;
-  // map of node to the bead ID at that node (without "high" bead ids for right-hand oriented molecules)
-  private final Map<Node, Integer> nodeToBeadIdsNoHigh = new HashMap<>();
-  // map of node to the bead ID at that node (with "high" bead ids for right-hand oriented molecules)
-  private final Map<Node, Integer> nodeToBeadIdsHigh = new HashMap<>();
+  // map of node to the bead ID at that node (without "high" bead ids for enantiomers)
+  private final Map<Node, Integer> nodeToAdjacencyBeadIds = new HashMap<>();
+  // map of node to the bead ID at that node (with "high" bead ids for enantiomers)
+  private final Map<Node, Integer> nodeToDistinctBeadIds = new HashMap<>();
   private final List<Integer> adjacencyCounts;
   private final String tag;
   private final ResultEquality equality;
 
-  public CrystalResult(Crystal crystal, Molecule rootMolecule, Molecule rootMolecule2, List<Row> rows) {
+  public CrystalResult(Crystal crystal, RootMolecules rootMolecules, List<Row> rows) {
     this.crystal = crystal;
-    this.rootMolecule = rootMolecule;
-    this.rootMolecule2 = rootMolecule2;
+    this.rootMolecules = rootMolecules;
     this.rows = rows;
     this.bucketName = buildBucketName();
     buildNodeToBeadIdMaps();
@@ -51,7 +50,7 @@ public class CrystalResult {
   }
 
   public int getBeadId(Node node) {
-    Integer beadId = nodeToBeadIdsHigh.get(node);
+    Integer beadId = nodeToDistinctBeadIds.get(node);
     return beadId == null ? 0 : beadId;
   }
 
@@ -62,28 +61,70 @@ public class CrystalResult {
     if (leftCount + rightCount == 0) {
       return BUCKET_NAME_ALL;
     }
-    else if (rootMolecule2 != null && rootMolecule.getOrientation() == rootMolecule2.getOrientation()) {
+    if (rootMolecules.twoMoleculesHaveSameSpecificOrientation()) {
       // if both molecules have the same orientation, then return the times each molecule was used
-      String orientationLetter = rootMolecule.getOrientation().name().substring(0, 1).toLowerCase();
+      String orientationLetter = getOrientationLetter(rootMolecules.getMolecule1());
       Map<String, Integer> moleculeCounts = countMolecules(rows);
       return String.format(orientationLetter + "%1$02d" + orientationLetter + "%2$02d",
-                           getCountOfMolecule(moleculeCounts, rootMolecule),
-                           getCountOfMolecule(moleculeCounts, rootMolecule2));
+                           getCountOfMolecule(moleculeCounts, rootMolecules.getMolecule1()),
+                           getCountOfMolecule(moleculeCounts, rootMolecules.getMolecule2()));
+    }
+    if (rootMolecules.twoMoleculesWithEnantiomers()) {
+      Map<String, Integer> countsMap = getCountsOfMoleculesWithOrientation(rows);
+      String m1Name = rootMolecules.getMolecule1().getName();
+      String m2Name = rootMolecules.getMolecule2().getName();
+      Object[] counts = new Integer[4];
+      counts[0] = safeGet(countsMap, m1Name + "l");
+      counts[1] = safeGet(countsMap, m1Name + "r");
+      counts[2] = safeGet(countsMap, m2Name + "l");
+      counts[3] = safeGet(countsMap, m2Name + "r");
+      StringBuilder sb = new StringBuilder();
+      appendCount(sb, "l", 1);
+      appendCount(sb, "r", 2);
+      sb.append("_");
+      appendCount(sb, "l", 3);
+      appendCount(sb, "r", 4);
+      return String.format(sb.toString(), counts);
     }
     return String.format("l%1$02dr%2$02d", leftCount, rightCount);
   }
 
-  private Map<String, Integer> countMolecules(List<Row> resultRows) {
-    Map<String, Integer> moleculeCounts = new HashMap<>();
-    for (Row row : resultRows) {
-      for (Molecule molecule : row.getMolecules()) {
-        Integer count = moleculeCounts.get(molecule.getName());
-        if (count == null) {
-          count = 0;
+  private static void appendCount(StringBuilder sb, String name, int parmNum) {
+    sb.append(name).append("%").append(parmNum).append("$02d");
+  }
+
+  private static int safeGet(Map<String, Integer> counts, String name) {
+    Integer count = counts.get(name);
+    return count == null ? 0 : count;
+  }
+
+  private static String getNameWithOrientation(Molecule molecule) {
+    return molecule.getName() + getOrientationLetter(molecule);
+  }
+
+  private static String getOrientationLetter(Molecule molecule) {
+    return molecule.getOrientation().name().substring(0, 1).toLowerCase();
+  }
+
+  private void forEachMolecule(List<Row> rows, Consumer<Molecule> consumer) {
+    for (Row row : rows) {
+      if (!row.isHole()) {
+        for (Molecule molecule : row.getMolecules()) {
+          consumer.accept(molecule);
         }
-        moleculeCounts.put(molecule.getName(), ++count);
       }
     }
+  }
+
+  private Map<String, Integer> countMolecules(List<Row> resultRows) {
+    Map<String, Integer> moleculeCounts = new HashMap<>();
+    forEachMolecule(resultRows, molecule -> {
+      Integer count = moleculeCounts.get(molecule.getName());
+      if (count == null) {
+        count = 0;
+      }
+      moleculeCounts.put(molecule.getName(), ++count);
+    });
     return moleculeCounts;
   }
 
@@ -92,18 +133,29 @@ public class CrystalResult {
     return count == null ? 0 : count;
   }
 
+  private Map<String, Integer> getCountsOfMoleculesWithOrientation(List<Row> resultRows) {
+    Map<String, Integer> rtn = new HashMap<>();
+    forEachMolecule(resultRows, molecule -> {
+      String name = getNameWithOrientation(molecule);
+      Integer count = rtn.get(name);
+      if (count == null) {
+        count = 0;
+      }
+      rtn.put(name, ++count);
+    });
+    return rtn;
+  }
+
   private Map<Orientation, Integer> countOrientations(List<Row> resultRows) {
     Map<Orientation, Integer> orientationCounts = new HashMap<>();
-    for (Row row : resultRows) {
-      for (Molecule molecule : row.getMolecules()) {
-        Orientation orientation = molecule.getOrientation();
-        Integer count = orientationCounts.get(orientation);
-        if (count == null) {
-          count = 0;
-        }
-        orientationCounts.put(orientation, ++count);
+    forEachMolecule(resultRows, molecule -> {
+      Orientation orientation = molecule.getOrientation();
+      Integer count = orientationCounts.get(orientation);
+      if (count == null) {
+        count = 0;
       }
-    }
+      orientationCounts.put(orientation, ++count);
+    });
     return orientationCounts;
   }
 
@@ -118,18 +170,14 @@ public class CrystalResult {
    * @return an ordered list of counts for the adjacencies between different beads
    */
   private List<Integer> computeAdjacencyCounts() {
-    Map<String, Integer> adjacencyCountMap = buildAdjacencyCountMap(rootMolecule2 == null ? nodeToBeadIdsNoHigh : nodeToBeadIdsHigh);
-    for (Row row : rows) {
-      if (!row.isHole()) {
-        for (Molecule molecule : row.getMolecules()) {
-          // subtract the counts for adjacencies within the molecules--they don't count
-          molecule.subtractInternalAdjacencies(adjacencyCountMap, isHighMolecule(molecule));
-        }
-      }
-    }
+    Map<String, Integer> adjacencyCountMap = buildAdjacencyCountMap(nodeToAdjacencyBeadIds);
+    forEachMolecule(rows, molecule -> {
+      // subtract the counts for adjacencies within the molecules--they don't count
+      molecule.subtractInternalAdjacencies(adjacencyCountMap, rootMolecules.isHighMolecule(molecule));
+    });
     List<Integer> adjacencyCounts = new ArrayList<>();
-    for (int i = 1; i <= getAdjacencyBeadCount(); i++) {
-      for (int j = i; j <= getAdjacencyBeadCount(); j++) {
+    for (int i = 1; i <= rootMolecules.getAdjacencyBeadCount(); i++) {
+      for (int j = i; j <= rootMolecules.getAdjacencyBeadCount(); j++) {
         Integer count = adjacencyCountMap.get(Molecule.buildAdjacencyName(i, j));
         if (count == null) {
           count = 0;
@@ -138,14 +186,6 @@ public class CrystalResult {
       }
     }
     return adjacencyCounts;
-  }
-
-  private int getAdjacencyBeadCount() {
-    return rootMolecule2 == null ? rootMolecule.size() : rootMolecule.size() + rootMolecule2.size();
-  }
-
-  private boolean isHighMolecule(Molecule molecule) {
-    return rootMolecule2 != null && rootMolecule2.getName().equals(molecule.getName());
   }
 
   /**
@@ -201,23 +241,16 @@ public class CrystalResult {
         continue;
       }
       for (Molecule molecule : row.getMolecules()) {
-        int rightHandOffset = computeRightHandOffset(molecule);
+        int distinctBeadIdOffset = rootMolecules.getDistinctBeadIdOffset(molecule);
+        int adjacencyBeadIdOffset = rootMolecules.getAdjacencyBeadIdOffset(molecule);
         Node startingNode = crystal.getNode(row.getNodeId(molecule));
-        for (int i = 0; i < molecule.size(); i++) {
-          int beadId = i + 1;
+        for (int beadId = 1; beadId <= molecule.size(); beadId++) {
           Node beadNode = molecule.getBeadNode(startingNode, beadId);
-          this.nodeToBeadIdsHigh.put(beadNode, beadId + rightHandOffset);
-          this.nodeToBeadIdsNoHigh.put(beadNode, beadId);
+          this.nodeToDistinctBeadIds.put(beadNode, beadId + distinctBeadIdOffset);
+          this.nodeToAdjacencyBeadIds.put(beadNode, beadId + adjacencyBeadIdOffset);
         }
       }
     }
-  }
-
-  private int computeRightHandOffset(Molecule molecule) {
-    if (rootMolecule2 == null) {
-      return molecule.getOrientation() == Orientation.Right ? molecule.size() : 0;
-    }
-    return molecule.getName().equals(rootMolecule2.getName()) ? rootMolecule.size() : 0;
   }
 
   public List<Integer> getAdjacencyCounts() {
@@ -225,7 +258,7 @@ public class CrystalResult {
   }
 
   public String toString() {
-    return crystal.getName() + "_" + CrystalResults.computeMoleculeDir(rootMolecule, rootMolecule2) + "_" + getBucketName() + ": " + adjacencyCounts + ", tag: " + tag;
+    return crystal.getName() + "_" + rootMolecules.getName() + "_" + getBucketName() + ": " + adjacencyCounts + ", tag: " + tag;
   }
 
   public ResultEquality getEquality() {
@@ -254,7 +287,11 @@ public class CrystalResult {
       .collect(Collectors.toList());
     List<String> chiralOppositeTracks = trackList
       .stream()
-      .map(s -> chiralOpposite(s, rootMolecule.size()))
+      // note: though this is not exactly right, it it matches what was done before
+      // for the "2 molecules no enantiomers case". So to keep it the same as before
+      // to avoid invalidating all of Johnny's computations of this kind
+      .map(s -> chiralOpposite(s, rootMolecules.getDistinctBeadCount() / 2))
+//      .map(s -> chiralOpposite(s, rootMolecules.getAdjacencyBeadCount()))
       .map(Utils::smallestSubstring)
       .map(Utils::rotateOptimally)
       .distinct()
@@ -268,21 +305,21 @@ public class CrystalResult {
     return Stream.of(partialTag, chiralPartial).sorted().collect(Collectors.joining());
   }
 
-  private static String chiralOpposite(String s, int moleculeSize) {
+  private static String chiralOpposite(String s, int beadCountOffset) {
     StringBuilder sb = new StringBuilder();
-    s.chars().forEach(ch -> sb.append(CrystalResult.chiralOpposite(ch, moleculeSize)));
+    s.chars().forEach(ch -> sb.append(chiralOpposite(ch, beadCountOffset)));
     return sb.toString();
   }
 
-  private static char chiralOpposite(int ch, int moleculeSize) {
+  private static char chiralOpposite(int ch, int beadCountOffset) {
     int beadId = ch - 'a';
     if (beadId == 0) {
       return (char) ch;
     }
-    if (beadId > moleculeSize) {
-      return (char) ('a' + (beadId - moleculeSize));
+    if (beadId > beadCountOffset) {
+      return (char) ('a' + (beadId - beadCountOffset));
     }
-    return (char) ('a' + beadId + moleculeSize);
+    return (char) ('a' + beadId + beadCountOffset);
   }
 
   private List<String> getTrackList() {
@@ -298,7 +335,7 @@ public class CrystalResult {
       for (int j = 0; j < height; j++) {
         Node node = crystal.getNode(nbo[j + 1][i]);
         // if node is null, it's a hole
-        Integer beadId = node == null ? 0 : nodeToBeadIdsHigh.get(node);
+        Integer beadId = node == null ? 0 : nodeToDistinctBeadIds.get(node);
         sb.append((char) ('a' + (beadId == null ? 0 : beadId)));
       }
       trackList.add(sb.toString());
@@ -310,7 +347,8 @@ public class CrystalResult {
     List<Byte> bytes = new ArrayList<>();
     adjacencyCounts.forEach(count -> bytes.add((byte) (count & 0xFF)));
     for (int i = 0; i < tag.length(); i += 2) {
-      char ch2 = (i + 1 >= tag.length()) ? (char) ('a' + rootMolecule.size() * 2 + 1) : tag.charAt(i + 1);
+      // adjacencyBeadCount * 2 + 1 ensures a character that is beyond any that would occur naturally in the string
+      char ch2 = (i + 1 >= tag.length()) ? (char) ('a' + rootMolecules.getAdjacencyBeadCount() * 2 + 1) : tag.charAt(i + 1);
       bytes.add(nibbleIt(tag.charAt(i), ch2));
     }
     byte[] rtn = new byte[bytes.size()];

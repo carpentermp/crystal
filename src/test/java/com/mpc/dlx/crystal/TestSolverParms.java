@@ -9,7 +9,7 @@ public class TestSolverParms {
   @Test
   public void testSolverParms() {
     SolverParms parms = new SolverParms("5", "inputDir");
-    assertEquals(Molecule.m05, parms.getMolecules().get(0));
+    assertEquals(Molecule.m05, parms.getRootMolecules().getMolecule1());
     assertEquals("inputDir", parms.getInputDir());
     assertNull(parms.getOutputDir());
     assertEquals(0, parms.getStartingCrystal());
@@ -30,7 +30,7 @@ public class TestSolverParms {
       .quitTime(now)
       .maxSolutionCount(1000);
     SolverParms parms2 = new SolverParms(parms);
-    assertEquals(Molecule.m01, parms2.getMolecules().get(0));
+    assertEquals(Molecule.m01, parms2.getRootMolecules().getMolecule1());
     assertEquals("inputDir", parms2.getInputDir());
     assertEquals("outputDir", parms2.getOutputDir());
     assertEquals(10, parms2.getStartingCrystal());
@@ -40,12 +40,13 @@ public class TestSolverParms {
     assertTrue(parms2.isDoGZip());
     assertEquals(now, parms2.getQuitTime());
     assertEquals(1000, parms2.getMaxSolutionCount());
+    assertEquals(5, parms.getMoleculeSize());
   }
 
   @Test
   public void testSolverParmsWithArgs() {
     SolverParms parms = new SolverParms("-o outputDir -s 10 -e 20 -d -h 5 -g -q 12h -m 1000 1 inputDir".split(" "));
-    assertEquals(Molecule.m01, parms.getMolecules().get(0));
+    assertEquals(Molecule.m01, parms.getRootMolecules().getMolecule1());
     assertEquals("inputDir", parms.getInputDir());
     assertEquals("outputDir", parms.getOutputDir());
     assertEquals(10, parms.getStartingCrystal());
@@ -64,20 +65,35 @@ public class TestSolverParms {
   @Test
   public void testSolverParmsWithCompoundMoleculeParm() {
     SolverParms parms = new SolverParms("m09r_m10l", "inputDir");
-    assertEquals(Molecule.m09.mirror(Direction.Right), parms.getMolecules().get(0));
-    assertEquals(Molecule.m10, parms.getMolecules().get(1));
+    assertEquals(Molecule.m09.mirror(Direction.Right), parms.getRootMolecules().getMolecule1());
+    assertEquals(Molecule.m10, parms.getRootMolecules().getMolecule2());
     parms = new SolverParms("m10l_m09r", "inputDir");
-    assertEquals(Molecule.m09.mirror(Direction.Right), parms.getMolecules().get(0));
-    assertEquals(Molecule.m10, parms.getMolecules().get(1));
+    assertEquals(Molecule.m09.mirror(Direction.Right), parms.getRootMolecules().getMolecule1());
+    assertEquals(Molecule.m10, parms.getRootMolecules().getMolecule2());
+  }
+
+  @Test
+  public void testSolverParmsWithTwoMoleculesAndEnantiomers() {
+    SolverParms parms = new SolverParms("m09_m10", "inputDir");
+    RootMolecules rm = parms.getRootMolecules();
+    assertEquals(Molecule.m09, rm.getMolecule1());
+    assertEquals(Molecule.m10, rm.getMolecule2());
+    assertTrue(rm.twoMoleculesWithEnantiomers());
+  }
+
+  @Test
+  public void testDimer() {
+    SolverParms parms = new SolverParms("dimer", "inputDir");
+    assertEquals(Molecule.dimer, parms.getRootMolecules().getMolecule1());
   }
 
   @Test
   public void testSolverParmsWithCompountChiralMoleculeParm() {
     SolverParms parms = new SolverParms("m09_m10", "inputDir");
-    assertEquals(Molecule.m09, parms.getMolecules().get(0));
-    assertEquals(Molecule.m10, parms.getMolecules().get(1));
-    assertEquals(Molecule.m09.mirror(Direction.Right), parms.getMolecules().get(2));
-    assertEquals(Molecule.m10.mirror(Direction.Right), parms.getMolecules().get(3));
+    assertEquals(Molecule.m09, parms.getRootMolecules().getMolecule1());
+    assertEquals(Molecule.m10, parms.getRootMolecules().getMolecule2());
+    assertEquals(Molecule.m09.mirror(Direction.Right), parms.getRootMolecules().getMolecule1().enantiomer());
+    assertEquals(Molecule.m10.mirror(Direction.Right), parms.getRootMolecules().getMolecule2().enantiomer());
 
     parms = new SolverParms("m05l_m06l", "/Users/merlin/Downloads/textfiles2/").crystal(22);
     System.out.println();
